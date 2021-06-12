@@ -1,0 +1,20 @@
+
+CHIP CalculatingCarries {
+	IN P0, P1, P2, G0, G1, G2, c; 
+	OUT C1, C2, C3;
+
+	PARTS:
+	And(a=c, b=P0, out=C0P0);
+	And(a=C0P0, b=P1, out=C0P0P1);
+	And(a=C0P0P1, b=P2, out=C0P0P1P2);
+    And(a=G0, b=P1, out=G0P1);
+    And(a=G0P1, b=P2, out=G0P1P2);
+    And(a=G1, b=P2, out=G1P2);
+
+    Or(a=G0, b=C0P0, out=C1);
+    Or(a=C0P0P1, b=G0P1, out=t1);
+    Or(a=t1, b=G1, out=C2);
+    Or(a=C0P0P1P2, b=G0P1P2, out=t2);
+    Or(a=t2, b=G1P2, out=t3);
+    Or(a=t3, b=G2, out=C3);
+}

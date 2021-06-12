@@ -1,0 +1,49 @@
+
+
+CHIP GeneratingVariables {
+    IN a[4], b[4];
+    OUT P00, P01, P02, P03, G00, G01, G02, G03, GG, PG;
+
+    PARTS:
+    // calculating P0-P3
+    Xor(a=a[0], b=b[0], out=P0);
+    Xor(a=a[1], b=b[1], out=P1);
+    Xor(a=a[2], b=b[2], out=P2);
+    Xor(a=a[3], b=b[3], out=P3);
+
+    // calculating G0-G3
+    And(a=a[0], b=b[0], out=G0);
+    And(a=a[1], b=b[1], out=G1);
+    And(a=a[2], b=b[2], out=G2);
+    And(a=a[3], b=b[3], out=G3);
+
+      // PG == P0.P1.P2.P3
+    And(a=P0, b=P1,out=tt1);
+    And(a=tt1, b=P2, out=tt2);
+    And(a=tt2, b=P3, out=PG);
+
+    // Components for GG
+    And(a=P1, b=G0, out=P1G0);
+    And(a=P2, b=P1G0, out=P2P1G0);
+    And(a=P2, b=G1, out=P2G1);
+
+    And(a=P3, b=P2P1G0, out=P3P2P1G0);
+    And(a=P3, b=P2G1, out=P3P2G1);
+    And(a=P3, b=G2, out=P3G2);
+
+    // GG == G3 + P3P2G1 + P3P2P1G0
+    Or(a=P3P2P1G0, b=P3P2G1, out=t1);
+    Or(a=P3G2, b=t1, out=t2);
+    Or(a=G3, b=t2, out=GG);
+
+    // converting P, G to output
+    And(a=P0, b=P0, out=P00);
+    And(a=P1, b=P1, out=P01);
+    And(a=P2, b=P2, out=P02);
+    And(a=P3, b=P3, out=P03);
+    And(a=G0, b=G0, out=G00);
+    And(a=G1, b=G1, out=G01);
+    And(a=G2, b=G2, out=G02);
+    And(a=G3, b=G3, out=G03);
+
+}
