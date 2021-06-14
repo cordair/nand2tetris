@@ -1,0 +1,24 @@
+/**
+ * Memory of 4K registers, each 16 bit-wide. Out holds the value
+ * stored at the memory location specified by address. If load==1, then 
+ * the in value is loaded into the memory location specified by address 
+ * (the loaded value will be emitted to out from the next time step onward).
+ */
+
+CHIP RAM4K {
+    IN in[16], load, address[12];
+    OUT out[16];
+
+    PARTS:
+    DMux8Way(in=load, sel=address[9..11], 
+    a=a, b=b, c=c, d=d, e=e, f=f, g=g, h=h);
+    RAM512(in=in, load=a, address=address[0..8], out=ram5120);
+    RAM512(in=in, load=b, address=address[0..8], out=ram5121);
+    RAM512(in=in, load=c, address=address[0..8], out=ram5122);
+    RAM512(in=in, load=d, address=address[0..8], out=ram5123);
+    RAM512(in=in, load=e, address=address[0..8], out=ram5124);
+    RAM512(in=in, load=f, address=address[0..8], out=ram5125);
+    RAM512(in=in, load=g, address=address[0..8], out=ram5126);
+    RAM512(in=in, load=h, address=address[0..8], out=ram5127);
+    Mux8Way16(a=ram5120, b=ram5121, c=ram5122, d=ram5123, e=ram5124, f=ram5125, g=ram5126, h=ram5127, sel=address[9..11], out=out);
+}
