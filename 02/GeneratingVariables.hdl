@@ -37,13 +37,13 @@ CHIP GeneratingVariables {
     Or(a=G3, b=t2, out=GG);
 
     // converting P, G to output
-    And(a=P0, b=P0, out=P00);
-    And(a=P1, b=P1, out=P01);
-    And(a=P2, b=P2, out=P02);
-    And(a=P3, b=P3, out=P03);
-    And(a=G0, b=G0, out=G00);
-    And(a=G1, b=G1, out=G01);
-    And(a=G2, b=G2, out=G02);
-    And(a=G3, b=G3, out=G03);
+    And(a=P0, b=true, out=P00);
+    And(a=P1, b=true, out=P01);
+    And(a=P2, b=true, out=P02);
+    And(a=P3, b=true, out=P03);
+    And(a=G0, b=true, out=G00);
+    And(a=G1, b=true, out=G01);
+    And(a=G2, b=true, out=G02);
+    And(a=G3, b=true, out=G03);
 
 }

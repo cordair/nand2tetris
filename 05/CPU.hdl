@@ -4,7 +4,7 @@
  * The CPU is designed to fetch and execute instructions written in 
  * the Hack machine language. In particular, functions as follows:
  * Executes the inputted instruction according to the Hack machine 
- * language specification. The D and A in the language specification
+ * language specification. The D and A in the language specification    
  * refer to CPU-resident registers, while M refers to the external
  * memory location addressed by A, i.e. to Memory[A]. The inM input 
  * holds the value of this location. If the current instruction needs 
