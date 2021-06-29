@@ -1,5 +1,4 @@
 
-
 CHIP GeneratingVariables {
     IN a[4], b[4];
     OUT P00, P01, P02, P03, G00, G01, G02, G03, GG, PG;
@@ -37,7 +36,7 @@ CHIP GeneratingVariables {
     Or(a=G3, b=t2, out=GG);
 
     // converting P, G to output
-    And(a=P0, b=true, out=P00);
+    And(a=P0, b=true, out=P00);   // P00 is P0, just name it differently
     And(a=P1, b=true, out=P01);
     And(a=P2, b=true, out=P02);
     And(a=P3, b=true, out=P03);
@@ -45,5 +44,4 @@ CHIP GeneratingVariables {
     And(a=G1, b=true, out=G01);
     And(a=G2, b=true, out=G02);
     And(a=G3, b=true, out=G03);
-
 }
