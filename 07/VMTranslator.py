@@ -98,7 +98,7 @@ class CodeWriter:
         self.write("M=1")
         self.performSub()
         self.write("D=0")
-        self.write("@LR")
+        self.write("@GT")
         self.write("M;JGT")
         self.write("D=M")
         self.write("@SP")
