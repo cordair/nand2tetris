@@ -79,7 +79,7 @@ class CodeWriter:
     def performCheckEqual(self):
         self.performSub()
         self.write("D=0")
-        self.write("M=M&0")
+        self.write("M=M&D")
 
     def performCheckLower(self):
         self.write("@LT")
