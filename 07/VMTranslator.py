@@ -51,6 +51,7 @@ class Parser:
 class CodeWriter:
     def __init__(self, asm_file):
         self.file = asm_file
+        self.label_number = 0
 
     def write(self, line):
         self.file.write(line + END_LINE)
@@ -65,7 +66,7 @@ class CodeWriter:
         self.write("M=D+M")
 
     def performSub(self):
-        self.write("M=M-D")
+        self.write("MD=M-D")
 
     def performAnd(self):
         self.write("M=M&D")
@@ -74,55 +75,59 @@ class CodeWriter:
         self.write("M=M|D")
         
     def performNot(self):
+        self.write("@SP")
+        self.write("A=M-1")
+        self.write("M=!M")
+
+    def performNeg(self):
+        self.write("@SP")
+        self.write("A=M-1")
         self.write("M=-M")
 
-    def performCheckEqual(self):
-        self.performSub()
-        self.write("D=0")
-        self.write("M=M&D")
-
-    def performCheckLower(self):
-        self.write("@LT")
-        self.write("M=1")
-        self.performSub()
-        self.write("D=0")
-        self.write("@LT")
-        self.write("M;JLT")
-        self.write("D=M")
-        self.write("@SP")
-        self.write("A=A-1")
-        self.write("M=D")
-    
-    def performCheckGreater(self):
-        self.write("@GT")
-        self.write("M=1")
-        self.performSub()
-        self.write("D=0")
-        self.write("@GT")
-        self.write("M;JGT")
-        self.write("D=M")
-        self.write("@SP")
-        self.write("A=A-1")
-        self.write("M=D")
-        
-    def writeArithmetic(self, arith):
+    def performCompare(self, compareType):
+        label = compareType + str(self.label_number)
+        end = "end{label}".format(label=compareType) + str(self.label_number)
         self.getTwoValues()
+        self.performSub()
+        self.write("@{label}".format(label=label))
+        self.write("D;J{compareType}".format(compareType=compareType))
+        self.write("@SP")
+        self.write("A=M-1")
+        self.write("M=0")
+        self.write("@{end}".format(end=end))
+        self.write("0;JMP")
+        self.write("({label})".format(label=label))
+        self.write("@SP")
+        self.write("A=M-1")
+        self.write("M=-1")
+        self.write("({end})".format(end=end))
+
+    def writeArithmetic(self, arith):
         if (arith == "add"):
+            self.getTwoValues()
             self.performAdd()
         elif (arith == "sub"):
+            self.getTwoValues()
             self.performSub()
         elif (arith == "and"):
+            self.getTwoValues()
             self.performAnd()
         elif (arith == "or"):
+            self.getTwoValues()
             self.performOr()
         elif (arith == "not"):
             self.performNot()
+        elif (arith == "neg"):
+            self.performNeg()
         elif (arith == "eq"):
-            self.performCheckEqual()
+            self.performCompare("EQ")
+            self.label_number += 1
         elif (arith == "lt"):
-            self.performCheckLower()
+            self.performCompare("LT")
+            self.label_number += 1
         elif (arith == "gt"):
-            self.performCheckGreater()
+            self.performCompare("GT")
+            self.label_number += 1
 
     def storeSegmentAddress(self, segment, address):
         self.write("@{address}".format(address = address))
