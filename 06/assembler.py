@@ -111,7 +111,7 @@ class Parser:
 
     def createSymbolTable(self):
         with open(self.read_file_name, "r") as read_file:
-            line_count = 0
+            rom_index = 0
             for line in read_file.readlines():
                 words = ""
                 for word in line.split():
@@ -122,9 +122,9 @@ class Parser:
                     continue
 
                 if (words[0] == '('):
-                    self.symbolTable.addEntry(words[1:-1], line_count)
+                    self.symbolTable.addEntry(words[1:-1], rom_index)
                     continue
-                line_count += 1
+                rom_index += 1
             read_file.close()
 
     def assignVariables(self):
