@@ -1,0 +1,94 @@
+The goal is to translate stack VM abstraction to assembly code.
+		 --------------------------------------------
+			**ADD, SUB, AND, OR, NOT, NEG**
+EXAMPLE: add
+AM=M-1
+D=M
+A=A-1
+M=M+D
+
+
+				**COMPARE**
+// minus 2 values in stack
+@SP
+AM=M-1
+D=M
+A=A-1
+MD=M-D
+functions compare(string "lt") // "gt"
+// compare LT
+@LT
+D;JLT
+D=0
+@END
+0;JMP
+(LT)
+D=-1
+(END)
+@SP
+A=M-1
+M=D
+
+				**PUSH**
+8 parts: LCL, ARG, THIS, THAT,
+	CONSTANT, STATIC, TEMP, POINTER
+EXAMPLE: push local 5 (or ARG, THIS, THAT)
+// get values
+@5
+D=A
+@LCL
+A=A+D
+D=M
+// push to stack 
+@SP
+AM=M+1
+A=A-1
+M=D
+
+EXAMPLE: push TEMP 3
+address = 5 + 3
+// get value from address
+// then push to stack
+
+EXAMPLE: push STATIC 4
+address  = 16 + 4
+// get value from address
+// then push to stack
+
+EXAMPLE: push POINTER 0/1
+address = 3 + 0/1
+// get value from address
+// then push to stack
+
+				**POP**
+EXAMPLE: pop local 4 (or ARG, THIS, THAT)
+// store address
+@4
+D=A
+@LCL
+D=A+D
+@addr
+M=D
+// pop from stack
+@SP
+AM=M-1
+D=M
+// push to address
+@addr
+A=M
+M=D
+
+EXAMPLE: pop temp 2
+address=5+2
+// pop from stack
+// push to address
+
+EXAMPLE: pop static 4
+address=16+4
+// pop from stack
+// push to address
+
+EXAMPLE: pop pointer 0/1
+address=3+0/1
+// pop from stack
+// push to address
