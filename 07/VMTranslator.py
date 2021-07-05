@@ -18,11 +18,11 @@ class Parser:
                     continue
                 self.currentCommand = line.split()
                 if (self.commandType() == "C_ARITHMETIC"):
-                    codeWriter.writeArithmetic(self.currentCommand[0])
+                    codeWriter.writeArithmetic(self.arg1())
                 elif (self.commandType() == "C_PUSH"):
-                    codeWriter.writePush(self.currentCommand[1], self.currentCommand[2])
+                    codeWriter.writePush(self.arg2()[0], self.arg2()[1])
                 elif (self.commandType() == "C_POP"):
-                    codeWriter.writePop(self.currentCommand[1], self.currentCommand[2])
+                    codeWriter.writePop(self.arg2()[0], self.arg2()[1])
             read_file.close()
 
 
@@ -46,7 +46,7 @@ class Parser:
         return self.currentCommand[0]
 
     def arg2(self):
-        return self.currentCommand[1]
+        return self.currentCommand[1:]
 
 class CodeWriter:
     def __init__(self, asm_file):
