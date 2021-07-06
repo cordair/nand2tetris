@@ -4,7 +4,6 @@ END_LINE = "\n"
 
 TEMP = 5
 THIS = 3
-STATIC = "S"
 
 class Parser:
     def __init__(self, codeWriter):
@@ -82,15 +81,10 @@ class CodeWriter:
         self.file = asm_file
         self.label_number = 0
         self.function_number = 0
+        self.file_name = ""
 
-    def increaseLabelNumber(self):
-        self.label_number += 1
-
-    def increaseFunctionNumber(self):
-        self.function_number += 1
-
-    def setFileName(self, asm_file):
-        self.file = asm_file
+    def setFileName(self, vm_filename):
+        self.file_name = os.path.basename(vm_filename).split('.')[0]
 
     def write(self, line):
         self.file.write(line + END_LINE)
@@ -165,10 +159,10 @@ class CodeWriter:
             self.increaseLabelNumber()
         elif (arith == "lt"):
             self.performCompare("LT")
-            self.increaseLabelNumber()
+            self.label_number += 1
         elif (arith == "gt"):
             self.performCompare("GT")
-            self.increaseLabelNumber()
+            self.label_number += 1
 
     def pushToStack(self):
         self.write("@SP")
@@ -228,7 +222,7 @@ class CodeWriter:
         elif (segment == "constant"):
             self.popAddress(address)
         elif (segment == "static"):
-            address = STATIC + address
+            address = self.file_name + address
             self.popFromAddress(address)
         elif (segment == "pointer"):
             address = int(address) + THIS
@@ -250,7 +244,7 @@ class CodeWriter:
             self.pushToAddress(address)
             return
         elif (segment == "static"):
-            address = STATIC + address
+            address = self.file_name + address
             self.popFromStack()
             self.pushToAddress(address)
             return
@@ -284,17 +278,96 @@ class CodeWriter:
         self.write("D;JNE")
 
     def writeFunction(self, function_name, num_local):
-        self.write("({function_name}$)".format(function_name=function_name))
-        for i in range(num_local):
+        self.write("({function_name})".format(function_name=function_name))
+        for i in range(int(num_local)):
             self.write("D=0")
             self.pushToStack()
 
     def writeCall(self, function_name, num_var):
-        self.write("({label}.ret{i})".format(label=function_name, i=self.function_number))
-        self.increaseFunctionNumber()
+        # save address, LCL, ARG, THIS, THAT
+        self.write("@{function_name}$ret.{i}".format(function_name=function_name, i=self.function_number))
+        self.write("D=A")
+        self.pushToStack()
+        self.popFromAddress("LCL")
+        self.pushToStack()
+        self.popFromAddress("ARG")
+        self.pushToStack()
+        self.popFromAddress("THIS")
+        self.pushToStack()
+        self.popFromAddress("THAT")
+        self.pushToStack()
+
+        # reposition ARG
+        self.write("@{x}".format(x=5+int(num_var)))
+        self.write("D=A")
+        self.write("@SP")
+        self.write("D=M-D")
+        self.pushToAddress("ARG")
+        
+        # reposition LCL
+        self.popFromAddress("SP")
+        self.pushToAddress("LCL")
+        
+        # jump to desination function
+        self.write("@{function_name}".format(function_name=function_name))
+        self.write("0;JMP")
+
+        # write return label
+        self.write("({function_name}$ret.{i})".format(function_name=function_name, i=self.function_number))
+        self.function_number += 1
 
     def writeReturn(self):
-        
+        # end_frame = LCL
+        self.popFromAddress("LCL")
+        self.pushToAddress("R13")
+
+        # ret_addr = *(end_frame - 5)
+        self.write("@5")
+        self.write("A=D-A")
+        self.write("D=M")
+        self.pushToAddress("R14")
+
+        # *ARG = pop()
+        self.popFromStack()
+        self.write("@ARG")
+        self.write("A=M")
+        self.write("M=D")
+
+        # SP = ARG + 1
+        self.write("@ARG")
+        self.write("D=M")
+        self.write("@SP")
+        self.write("M=D+1")
+
+        # THAT = *(end_frame - 1)
+        self.write("@R13")
+        self.write("AM=M-1")
+        self.write("D=M")
+        self.pushToAddress("THAT")
+
+        # THIS = *(end_frame - 2)
+        self.write("@R13")
+        self.write("AM=M-1")
+        self.write("D=M")
+        self.pushToAddress("THIS")
+
+        # ARG =  *(end_frame - 3)
+        self.write("@R13")
+        self.write("AM=M-1")
+        self.write("D=M")
+        self.pushToAddress("ARG")
+
+        # LCL =  *(end_frame - 4)
+        self.write("@R13")
+        self.write("AM=M-1")
+        self.write("D=M")
+        self.pushToAddress("LCL")
+
+        # goto ret_addr
+        self.popFromAddress("R14")
+        self.write("A=D")
+        self.write("0;JMP")
+
 
     def close(self):
         self.file.close()
@@ -314,8 +387,9 @@ class Main:
         with open(asm_filename, "w") as asm_file:
             codeWriter = CodeWriter(asm_file)
             codeWriter.writeInit()
-            parser = Parser()
+            parser = Parser(codeWriter)
             for vm_filename in glob.glob(directory + "/*.vm"):
+                codeWriter.setFileName(vm_filename)
                 parser.parse(vm_filename)
             codeWriter.close()
 
