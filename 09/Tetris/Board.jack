@@ -1,0 +1,45 @@
+class Board {
+    field int WIDTH;
+    field int HEIGHT;
+    field boolean committed;
+
+    static field int SUCCESSFUL = 0;
+    static field int OUT_BOUNDS = 1;
+    static field int PLACE_BAD  = 2;
+    static field Matrix board;
+
+    constructor Board new(int width, int height) {
+        let WIDTH = width;
+        let HEIGHT = height;
+        let board = Matrix.new(WIDTH, HEIGHT);
+        let committed = false;
+        return this;
+    }
+
+    method void dispose() {
+        do board.dispose();
+        do Memory.deAlloc(this);
+    }
+
+    method int placePiece() {
+        if (committed) {
+            Output.printString("Board commit error!");
+        }
+
+        return FAILED;
+    }
+
+    method boolean clearRows() {
+        return false;
+    }
+
+    method void undo() {
+        let committed = false;
+        return;
+    }
+
+    method void commit() {
+        let committed = true;
+        return;
+    }
+}

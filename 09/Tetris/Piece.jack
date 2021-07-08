@@ -1,0 +1,54 @@
+class Piece {
+    field Array body;
+    field Array skirt;
+    static field Array pieces;
+
+    static field String STICK_STR	= "0 0  0 1  0 2  0 3";
+	static field String L1_STR		= "0 0  0 1  0 2  1 0";
+	static field String L2_STR		= "0 0	1 0  1 1  1 2";
+	static field String S1_STR		= "0 0	1 0	 1 1  2 1";
+	static field String S2_STR		= "0 1	1 1  1 0  2 0";
+	static field String SQUARE_STR	= "0 0  0 1  1 0  1 1";
+	static field String PYRAMID_STR	= "0 0  1 0  1 1  2 0";
+	
+	static field int STICK = 0;
+	static field int L1	  = 1;
+	static field int L2	  = 2;
+	static field int S1	  = 3;
+	static field int S2	  = 4;
+	static field int SQUARE	= 5;
+	static field int PYRAMID = 6;
+
+    constructor Piece new(String piece_str) {
+        
+        let body = Array.new(4)
+        return this;
+    }
+
+    method void dispose() {
+        do Array.dispose(body);
+        do Array.dispose(skirt);
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method Point skirt() {
+        return skirt;
+    }
+
+    method void createRotations() {
+        return;
+    }
+
+    function Piece getPieces() {
+        let Piece.pieces = Array.new(7);
+        let Piece.pieces[0] = createRotations(STICK_STR);
+        let Piece.pieces[1] = createRotations(L1_STR);
+        let Piece.pieces[2] = createRotations(L2_STR);
+        let Piece.pieces[3] = createRotations(S1_STR);
+        let Piece.pieces[4] = createRotations(S2_STR);
+        let Piece.pieces[5] = createRotations(SQUARE_STR);
+        let Piece.pieces[6] = createRotations(PYRAMID_STR);
+        return Piece.pieces;
+    }
+}

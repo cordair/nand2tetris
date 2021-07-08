@@ -1,0 +1,32 @@
+class Matrix {
+    field int width;
+    field int height;
+    field Array array2d;
+
+    constructor Matrix new(init_width, init_height) {
+        let width = init_width;
+        let height = init_height;
+        let array2d = Array.new(height);
+        let i = 0;
+        while (i < width) {
+            let array2d[i] = Array.new(width);
+            let i += 1;
+        }
+        return this;
+    }
+
+    method void dispose() {
+        do Array.dispose(array2d);
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void set(int x, int y, int value) {
+        let (array2d[x])[y] = value;
+        return;
+    }
+
+    method int get(int x, int y) {
+        return (array2d[x])[y];
+    }
+}

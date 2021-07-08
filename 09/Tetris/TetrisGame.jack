@@ -1,0 +1,83 @@
+class TetrisGame {
+    field Array pieces;
+    field Board board;
+    field Piece current_piece;
+    field int current_rotation;
+    field int current_x;
+    field int current_y;
+    field int next_x;
+    field int next_y;
+
+    field int score;
+    field boolean game_on;
+    field boolean paused;
+    field int timer;
+    field direction;
+
+    static field int NUMBER_OF_PIECES = 7;
+    static field int ROTATE = 0;
+	static field int LEFT   = 1;
+	static field int RIGHT  = 2;
+	static field int DROP   = 3;
+	static field int DOWN   = 4;
+
+    constructor TetrisGame new() {
+        let pieces = Piece.getPieces();
+        let board = Board.new();
+        return this;
+    }
+
+    method void start() {
+        let game_on = true;
+        let timer = 0;
+        while (game_on) {
+            tick();
+            timer += 1;
+
+            
+        }
+        return;
+    }
+
+    method void tick() {
+        let key = Keyboard.keyPressed();
+        if (key = 140) { let game_on = false;   }   // esc key
+        if (key = 128) { 
+            if (paused){ let paused = true;     }
+            else       { let paused = false;    }
+        }                                           // enter key
+        if (key = 32)  { let direction = DROP;  }   // space key
+        if (key = 131) { let direction = ROTATE;}   // up arrow
+        if (key = 133) { let direction = DOWN;  }   // down arrow
+        if (key = 130) { let direction = LEFT;  }   // left arrow
+        if (key = 132) { let direction = RIGHT; }   // right arrow
+
+        if (timer == 10) {
+            direction = DOWN;
+        }
+    }
+
+    method Piece pickNextPiece() {
+		var int piece_num = Random.randRange(NUMBER_OF_PIECES);
+		var Piece temp_piece;
+        let temp_piece = pieces[piece)num];
+		return(temp_piece);
+	}
+
+    method void addNewPiece() {
+
+    }
+
+    method boolean checkCurrentBoard() {
+
+    }
+
+    method void computeNextMove() {
+
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this)
+        return;
+    }
+}
