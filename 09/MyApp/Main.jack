@@ -1,32 +1,34 @@
-class Renderer {
-    static field int SCREEN_WIDTH = 64;
-    static field int SCREEN_HEIGHT = 32;
-    static field int GAME_WIDTH = 24;
-    static field int GAME_HEIGHT = 32;
-    static field int SPRITE_SIZE = 8;
-
-    constructor Renderer new() {
-        return this;
-    }
+class Main {
+    static int SCREEN_WIDTH;
+    static int SCREEN_HEIGHT;
+    static int GAME_WIDTH;
+    static int GAME_HEIGHT;
+    static int SPRITE_SIZE;
 
     method void dispose() {
         do Memory.deAlloc(this);
+        return;
     }
 
-    function void render(int x, int y, int size) {
+    method void render(int x, int y, int size) {
         
         return;
     }
 
-    function void renderPanel() {
-        var i = 0;
-        var x = 10;
-        var y = 0;
+    method void renderPanel() {
+        var int i;
+        var int x;
+        var int y;
+        var int addr;
+
+        let i = 0;
+        let x = 10;
+        let y = 0;
         while (i < 16) {
             let addr = calculateAddress(x, y);
             do drawLeftLine(addr);
-            let y += 1;
-            let i += 1;
+            let y = y + 1;
+            let i = i + 1;
         }
 
         let i = 0;
@@ -35,8 +37,8 @@ class Renderer {
         while (i < 16) {
             let addr = calculateAddress(x, y);
             do drawRightLine(addr);
-            let y += 1;
-            let i += 1;
+            let y = y + 1;
+            let i = i + 1;
         }
 
         let i = 0;
@@ -45,16 +47,18 @@ class Renderer {
         while (i < 20) {
             let addr = calculateAddress(x, y);
             do drawBottomLine(addr);
-            let x += 1;
-            let i += 1;
+            let x = x + 1;
+            let i = i + 1;
         }
+        return;
     }
 
-    function int calculateAddress(int x, int y) {
+    method int calculateAddress(int x, int y) {
         return ((y * SPRITE_SIZE) * 32) + Math.mod((x * SPRITE_SIZE), 16) + ((x * SPRITE_SIZE) / 16);
     }
 
-    function void drawLeftLine(int location) {
+    method void drawLeftLine(int location) {
+        var int memAddress;
         let memAddress = 16384+location;
         do Memory.poke(memAddress+0, 255);
         do Memory.poke(memAddress+32, 255);
@@ -75,7 +79,8 @@ class Renderer {
         return;
     }
 
-    function void drawRightLine(int location) {
+    method void drawRightLine(int location) {
+        var int memAddress;
         let memAddress = 16384+location;
         do Memory.poke(memAddress+0, -256);
         do Memory.poke(memAddress+32, -256);
@@ -95,7 +100,8 @@ class Renderer {
         do Memory.poke(memAddress+480, -256);
         return;
     }
-    function void drawBottomLine(int location) {
+    method void drawBottomLine(int location) {
+        var int memAddress;
         let memAddress = 16384+location;
         do Memory.poke(memAddress+0, 0);
         do Memory.poke(memAddress+32, 0);
@@ -113,6 +119,17 @@ class Renderer {
         do Memory.poke(memAddress+416, -1);
         do Memory.poke(memAddress+448, -1);
         do Memory.poke(memAddress+480, -1);
+        return;
+    }
+
+    method void main() {
+        let SCREEN_WIDTH = 64;
+        let SCREEN_HEIGHT = 32;
+        let GAME_WIDTH = 24;
+        let GAME_HEIGHT = 32;
+        let SPRITE_SIZE = 8;
+        
+        do renderPanel();
         return;
     }
 }

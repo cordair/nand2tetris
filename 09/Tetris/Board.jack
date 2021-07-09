@@ -3,9 +3,10 @@ class Board {
     field int HEIGHT;
     field boolean committed;
 
-    static field int SUCCESSFUL = 0;
-    static field int OUT_BOUNDS = 1;
-    static field int PLACE_BAD  = 2;
+    static field int PLACE_OK           = 0;
+    static field int PLACE_ROW_FILLED   = 1;
+    static field int PLACE_OUT_BOUNDS   = 2;
+    static field int PLACE_BAD          = 2;
     static field Matrix board;
 
     constructor Board new(int width, int height) {
@@ -21,16 +22,16 @@ class Board {
         do Memory.deAlloc(this);
     }
 
-    method int placePiece() {
+    method int placePiece(Piece piece, int x, int y) {
         if (committed) {
-            Output.printString("Board commit error!");
+            do Output.printString("Board commit error!");
         }
 
         return FAILED;
     }
 
-    method boolean clearRows() {
-        return false;
+    method int clearRows() {
+        return 1;
     }
 
     method void undo() {
@@ -41,5 +42,13 @@ class Board {
     method void commit() {
         let committed = true;
         return;
+    }
+
+    method int getHeight() {
+        return 1;
+    }
+
+    method int getWidth() {
+        return 1;
     }
 }

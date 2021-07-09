@@ -1,0 +1,14 @@
+class Math {
+    constructor Math new() {
+        return this;
+    }
+
+    function int mod(int a, int b) {
+        if (a < b) {
+            var temp = a;
+            let a = b;
+            let b = temp;
+        }
+        return a - ((a / b) * b);
+    }
+}

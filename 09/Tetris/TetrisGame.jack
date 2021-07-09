@@ -2,6 +2,7 @@ class TetrisGame {
     field Array pieces;
     field Board board;
     field Piece current_piece;
+    field Piece next_piece;
     field int current_rotation;
     field int current_x;
     field int current_y;
@@ -12,7 +13,8 @@ class TetrisGame {
     field boolean game_on;
     field boolean paused;
     field int timer;
-    field direction;
+    field int action;
+    field boolean moved;
 
     static field int NUMBER_OF_PIECES = 7;
     static field int ROTATE = 0;
@@ -27,16 +29,57 @@ class TetrisGame {
         return this;
     }
 
+    method void dispose() {
+        do Memory.deAlloc(this)
+        return;
+    }
+
     method void start() {
         let game_on = true;
         let timer = 0;
         while (game_on) {
-            tick();
-            timer += 1;
+            do tick();
+            let timer += 1;
 
+            if (current_piece != null) { do board.undo(); }
+
+            do computeNextMove();
+            var result = setCurrent();
+            if (result = Board.PLACE_ROW_FILLED) {
+                do paintPiece();
+            }
+            var failed = false;
+            if (result >= Board.PLACE_OUT_BOUNDS) {
+                failed = true;
+            }
+            if (failed) {
+                if (current_piece != null) { board.placePiece(current_piece, current_x, current_y); }
+            }            
+            if (failed & (action = DOWN) & ~moved) {
+                var int clear = board.clearRows();
+                score = score + (clear * 10);
+                do paint();
+            }
+            if (board.getHeight() > HEIGHT - TOP_SPACE) { let game_on = false; }
+            else { do addNewPiece(); }
             
+            if (~failed & action != DOWN) { moved = true; }
+            else { moved = false; }
         }
         return;
+    }
+
+    method int setCurrent() {
+        var int result = board.placePiece();
+        if (result <= Board.PLACE_ROW_FILLED) {
+            do paintPiece(current_piece, current_x, current_y, false);
+            let current_piece = next_piece;
+            let current_x = next_x;
+            let current_y = next_y;
+            do paintPiece(current_piece, current_x, current_y, true);
+        }
+        else { board.undo(); }
+        return result;
     }
 
     method void tick() {
@@ -46,38 +89,70 @@ class TetrisGame {
             if (paused){ let paused = true;     }
             else       { let paused = false;    }
         }                                           // enter key
-        if (key = 32)  { let direction = DROP;  }   // space key
-        if (key = 131) { let direction = ROTATE;}   // up arrow
-        if (key = 133) { let direction = DOWN;  }   // down arrow
-        if (key = 130) { let direction = LEFT;  }   // left arrow
-        if (key = 132) { let direction = RIGHT; }   // right arrow
+        if (key = 32)  { let action = DROP;  }   // space key
+        if (key = 131) { let action = ROTATE;}   // up arrow
+        if (key = 133) { let action = DOWN;  }   // down arrow
+        if (key = 130) { let action = LEFT;  }   // left arrow
+        if (key = 132) { let action = RIGHT; }   // right arrow
 
         if (timer == 10) {
-            direction = DOWN;
+            action = DOWN;
         }
     }
 
     method Piece pickNextPiece() {
 		var int piece_num = Random.randRange(NUMBER_OF_PIECES);
 		var Piece temp_piece;
-        let temp_piece = pieces[piece)num];
+        let temp_piece = pieces[piece_num];
 		return(temp_piece);
 	}
 
     method void addNewPiece() {
-
-    }
-
-    method boolean checkCurrentBoard() {
-
+        do board.commit();
+        let current_piece = null;
+        var Piece init_piece = pickNextPiece();
+        var center_x = (board.getWidth() - piece.getWidth()) / 2;
+        var center_y = (board.getHeight() - piece.getHeight() / 2);
+        var result = setCurrent(init_piece, center_x, center_y);
     }
 
     method void computeNextMove() {
-
+        let next_x = current_x;
+        let next_y = current_y;
+        let next_piece = current_piece;
+        if (action = ROTATE) {
+            let next_piece = current_piece.rotate();
+            let next_x = next_x + (next_piece.getX() - current_piece.getX()) / 2;
+            let next_y = next_y + (next_piece.getY() - current_piece.getY()) / 2;
+        }
+        if (action = DROP) {
+            let next_y = board.dropHeight();
+            if (next_y < current_y) {
+                let next_y = current_y;
+            }
+        }
+        if (action = DOWN) {
+            let next_y = current_y + 1;
+        }
+        if (action = LEFT) {
+            let next_x = current_x - 1;
+        }
+        if (action = RIGHT) {
+            let next_x = current_x + 1;
+        }
     }
 
-    method void dispose() {
-        do Memory.deAlloc(this)
+    function void paintPanel() {
+        do Renderer.renderPanel();
         return;
+    }
+
+    function void paintPiece(Piece piece, int x, int y, boolean color) {
+
+        return;
+    }
+
+    method void paint() {
+
     }
 }

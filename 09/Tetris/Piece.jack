@@ -1,15 +1,16 @@
 class Piece {
     field Array body;
     field Array skirt;
-    static field Array pieces;
+    field Piece next;
 
-    static field String STICK_STR	= "0 0  0 1  0 2  0 3";
-	static field String L1_STR		= "0 0  0 1  0 2  1 0";
-	static field String L2_STR		= "0 0	1 0  1 1  1 2";
-	static field String S1_STR		= "0 0	1 0	 1 1  2 1";
-	static field String S2_STR		= "0 1	1 1  1 0  2 0";
-	static field String SQUARE_STR	= "0 0  0 1  1 0  1 1";
-	static field String PYRAMID_STR	= "0 0  1 0  1 1  2 0";
+    static field Array pieces;
+    static field String STICK_STR	= "0,0 0,1 0,2 0,3";
+    static field String L1_STR	    = "0,0 0,1 0,2 1,0";
+    static field String L2_STR	    = "0,0 1,0 1,1 1,2";
+    static field String S1_STR	    = "0,0 1,0 1,1 2,1";
+    static field String S2_STR	    = "0,1 1,1 1,0 2,0";
+    static field String SQUARE_STR	= "0,0 0,1 1,0 1,1";
+    static field String PYRAMID_STR	= "0,0 1,0 1,1 2,0";
 	
 	static field int STICK = 0;
 	static field int L1	  = 1;
@@ -19,9 +20,12 @@ class Piece {
 	static field int SQUARE	= 5;
 	static field int PYRAMID = 6;
 
-    constructor Piece new(String piece_str) {
-        
-        let body = Array.new(4)
+    constructor Piece new(int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3) {
+        let body = Array.new(4);
+        let body[0] = Point.new(x0, y0);
+        let body[1] = Point.new(x1, y1);
+        let body[2] = Point.new(x2, y2);
+        let body[3] = Point.new(x3, y3);
         return this;
     }
 
@@ -36,19 +40,53 @@ class Piece {
         return skirt;
     }
 
-    method void createRotations() {
-        return;
+    method Piece rotate() {
+        return next;
+    }
+
+    method Piece createRotations(String piece_str, int piece_num) {
+        var Piece piece;
+        if (piece_num == STICK) {
+            piece = Piece.new(0, 0, 0, 1, 0, 2, 0, 3);
+        }
+        if (piece_num == S1) {
+            piece = Piece.new(0, 0, 0, 1, 0, 2, 0, 3);
+        }
+        if (piece_num == S2) {
+            piece = Piece.new(0, 0, 0, 1, 0, 2, 0, 3);
+        }
+        if (piece_num == L1) {
+            piece = Piece.new(0, 0, 0, 1, 0, 2, 0, 3);
+        }
+        if (piece_num == L2) {
+            piece = Piece.new(0, 0, 0, 1, 0, 2, 0, 3);
+        }
+        if (piece_num == SQUARE) {
+            piece = Piece.new(0, 0, 0, 1, 0, 2, 0, 3);
+        }
+        if (piece_num == PYRAMID) {
+            piece = Piece.new(0, 0, 0, 1, 0, 2, 0, 3);
+        }
+        return piece;
     }
 
     function Piece getPieces() {
         let Piece.pieces = Array.new(7);
-        let Piece.pieces[0] = createRotations(STICK_STR);
-        let Piece.pieces[1] = createRotations(L1_STR);
-        let Piece.pieces[2] = createRotations(L2_STR);
-        let Piece.pieces[3] = createRotations(S1_STR);
-        let Piece.pieces[4] = createRotations(S2_STR);
-        let Piece.pieces[5] = createRotations(SQUARE_STR);
-        let Piece.pieces[6] = createRotations(PYRAMID_STR);
+        let Piece.pieces[0] = createRotations(STICK_STR, STICK);
+        let Piece.pieces[1] = createRotations(L1_STR, L1);
+        let Piece.pieces[2] = createRotations(L2_STR, L2);
+        let Piece.pieces[3] = createRotations(S1_STR, S1);
+        let Piece.pieces[4] = createRotations(S2_STR, S2);
+        let Piece.pieces[5] = createRotations(SQUARE_STR, SQUARE);
+        let Piece.pieces[6] = createRotations(PYRAMID_STR, PYRAMID);
         return Piece.pieces;
+    }
+
+    method int getWidth() {
+        return 1;
+    }
+
+    method int getHeight() {
+        return 1;
     }
 }
