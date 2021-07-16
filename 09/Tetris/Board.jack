@@ -1,33 +1,66 @@
 class Board {
-    field int WIDTH;
-    field int HEIGHT;
+    static Matrix board;
+    field Array heights;
+
     field boolean committed;
 
-    static field int PLACE_OK           = 0;
-    static field int PLACE_ROW_FILLED   = 1;
-    static field int PLACE_OUT_BOUNDS   = 2;
-    static field int PLACE_BAD          = 2;
-    static field Matrix board;
+    field int WIDTH;
+    field int HEIGHT;
+    static int PLACE_OK;
+    static int PLACE_ROW_FILLED;
+    static int PLACE_OUT_BOUNDS;
+    static int PLACE_BAD;
 
     constructor Board new(int width, int height) {
+        let PLACE_OK = 0;
+        let PLACE_ROW_FILLED = 1;
+        let PLACE_OUT_BOUNDS = 2;
+        let PLACE_BAD = 3;
+
         let WIDTH = width;
         let HEIGHT = height;
         let board = Matrix.new(WIDTH, HEIGHT);
         let committed = false;
+
+        var int i;
+        let i = 0;
+        while (i < WIDTH) {
+            let heights[i] = 0;
+        }
+
         return this;
     }
 
     method void dispose() {
         do board.dispose();
         do Memory.deAlloc(this);
+        return;
+    }
+
+    method int dropHeight(Piece piece, int x) {
+        var Array pieceSkirt;
+        var int ySkirt;
+        var int i;
+        var int maxY = 0;
+        
+        let pieceBody = piece.getSkirt();
+        let i = 0;
+        while (i < piece.getWidth()) {
+            let ySkirt = pieceBody[i];
+            if (heights[i] + ySkirt > maxY) {
+                let maxY = heights[x + i] + ySkirt;
+            }
+            let i = i + 1;
+        }
+        return maxY;
     }
 
     method int placePiece(Piece piece, int x, int y) {
         if (committed) {
             do Output.printString("Board commit error!");
         }
-
-        return FAILED;
+        
+        return PLACE_BAD;
     }
 
     method int clearRows() {

@@ -1,0 +1,20 @@
+class MathUtils {
+    constructor MathUtils new() {
+        return this;
+    }
+    
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    function int mod(int a, int b) {
+        var int temp;
+        if (a < b) {
+            let temp = a;
+            let a = b;
+            let b = temp;
+        }
+        return a - ((a / b) * b);
+    }
+}

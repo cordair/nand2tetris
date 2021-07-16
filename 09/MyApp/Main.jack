@@ -1,135 +1,25 @@
 class Main {
-    static int SCREEN_WIDTH;
-    static int SCREEN_HEIGHT;
-    static int GAME_WIDTH;
-    static int GAME_HEIGHT;
-    static int SPRITE_SIZE;
-
-    method void dispose() {
-        do Memory.deAlloc(this);
-        return;
-    }
-
-    method void render(int x, int y, int size) {
+    function void main() {
+        var Array pieces;
+        var Piece currentPiece;
+        var Array points;
+        var Point currentPoint;
+        let pieces = Piece.getPieces();
+        let currentPiece = pieces[0];
+        let points = currentPiece.getBody();
         
-        return;
-    }
+        let currentPoint = points[0];
+        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
 
-    method void renderPanel() {
-        var int i;
-        var int x;
-        var int y;
-        var int addr;
+        let currentPoint = points[1];
+        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
 
-        let i = 0;
-        let x = 10;
-        let y = 0;
-        while (i < 16) {
-            let addr = calculateAddress(x, y);
-            do drawLeftLine(addr);
-            let y = y + 1;
-            let i = i + 1;
-        }
+        let currentPoint = points[2];
+        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
 
-        let i = 0;
-        let x = 20;
-        let y = 0;
-        while (i < 16) {
-            let addr = calculateAddress(x, y);
-            do drawRightLine(addr);
-            let y = y + 1;
-            let i = i + 1;
-        }
+        let currentPoint = points[3];
+        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
 
-        let i = 0;
-        let x = 10;
-        let y = 15;
-        while (i < 20) {
-            let addr = calculateAddress(x, y);
-            do drawBottomLine(addr);
-            let x = x + 1;
-            let i = i + 1;
-        }
-        return;
-    }
-
-    method int calculateAddress(int x, int y) {
-        return ((y * SPRITE_SIZE) * 32) + Math.mod((x * SPRITE_SIZE), 16) + ((x * SPRITE_SIZE) / 16);
-    }
-
-    method void drawLeftLine(int location) {
-        var int memAddress;
-        let memAddress = 16384+location;
-        do Memory.poke(memAddress+0, 255);
-        do Memory.poke(memAddress+32, 255);
-        do Memory.poke(memAddress+64, 255);
-        do Memory.poke(memAddress+96, 255);
-        do Memory.poke(memAddress+128, 255);
-        do Memory.poke(memAddress+160, 255);
-        do Memory.poke(memAddress+192, 255);
-        do Memory.poke(memAddress+224, 255);
-        do Memory.poke(memAddress+256, 255);
-        do Memory.poke(memAddress+288, 255);
-        do Memory.poke(memAddress+320, 255);
-        do Memory.poke(memAddress+352, 255);
-        do Memory.poke(memAddress+384, 255);
-        do Memory.poke(memAddress+416, 255);
-        do Memory.poke(memAddress+448, 255);
-        do Memory.poke(memAddress+480, 255);
-        return;
-    }
-
-    method void drawRightLine(int location) {
-        var int memAddress;
-        let memAddress = 16384+location;
-        do Memory.poke(memAddress+0, -256);
-        do Memory.poke(memAddress+32, -256);
-        do Memory.poke(memAddress+64, -256);
-        do Memory.poke(memAddress+96, -256);
-        do Memory.poke(memAddress+128, -256);
-        do Memory.poke(memAddress+160, -256);
-        do Memory.poke(memAddress+192, -256);
-        do Memory.poke(memAddress+224, -256);
-        do Memory.poke(memAddress+256, -256);
-        do Memory.poke(memAddress+288, -256);
-        do Memory.poke(memAddress+320, -256);
-        do Memory.poke(memAddress+352, -256);
-        do Memory.poke(memAddress+384, -256);
-        do Memory.poke(memAddress+416, -256);
-        do Memory.poke(memAddress+448, -256);
-        do Memory.poke(memAddress+480, -256);
-        return;
-    }
-    method void drawBottomLine(int location) {
-        var int memAddress;
-        let memAddress = 16384+location;
-        do Memory.poke(memAddress+0, 0);
-        do Memory.poke(memAddress+32, 0);
-        do Memory.poke(memAddress+64, 0);
-        do Memory.poke(memAddress+96, 0);
-        do Memory.poke(memAddress+128, 0);
-        do Memory.poke(memAddress+160, 0);
-        do Memory.poke(memAddress+192, 0);
-        do Memory.poke(memAddress+224, 0);
-        do Memory.poke(memAddress+256, -1);
-        do Memory.poke(memAddress+288, -1);
-        do Memory.poke(memAddress+320, -1);
-        do Memory.poke(memAddress+352, -1);
-        do Memory.poke(memAddress+384, -1);
-        do Memory.poke(memAddress+416, -1);
-        do Memory.poke(memAddress+448, -1);
-        do Memory.poke(memAddress+480, -1);
-        return;
-    }
-
-    method void main() {
-        let SCREEN_WIDTH = 64;
-        let SCREEN_HEIGHT = 32;
-        let GAME_WIDTH = 24;
-        let GAME_HEIGHT = 32;
-        let SPRITE_SIZE = 8;
-        
-        do renderPanel();
         return;
     }
 }

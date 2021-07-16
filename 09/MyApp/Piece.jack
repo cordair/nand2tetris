@@ -272,7 +272,7 @@ class Piece {
         return body;
     }
 
-    method Array getSkirt() {
+    method Array skirt() {
         return skirt;
     }
 

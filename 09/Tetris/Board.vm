@@ -1,0 +1,117 @@
+function Board.new 0
+push constant 3
+call Memory.alloc 1
+pop pointer 0
+push constant 0
+pop static 0
+push constant 1
+pop static 1
+push constant 2
+pop static 2
+push constant 3
+pop static 3
+push argument 0
+pop this 0
+push argument 1
+pop this 1
+push this 0
+push this 1
+call Matrix.new 2
+pop static 4
+push constant 0
+pop this 2
+push pointer 0
+return
+function Board.dispose 0
+push argument 0
+pop pointer 0
+push static 4
+call Matrix.dispose 1
+pop temp 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
+function Board.placePiece 0
+push argument 0
+pop pointer 0
+push this 2
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 19
+call String.new 1
+push constant 66
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 100
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 99
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 109
+call String.appendChar 2
+push constant 109
+call String.appendChar 2
+push constant 105
+call String.appendChar 2
+push constant 116
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 33
+call String.appendChar 2
+call Output.printString 1
+pop temp 0
+label IF_FALSE0
+push static 3
+return
+function Board.clearRows 0
+push argument 0
+pop pointer 0
+push constant 1
+return
+function Board.undo 0
+push argument 0
+pop pointer 0
+push constant 0
+pop this 2
+push constant 0
+return
+function Board.commit 0
+push argument 0
+pop pointer 0
+push constant 0
+not
+pop this 2
+push constant 0
+return
+function Board.getHeight 0
+push argument 0
+pop pointer 0
+push constant 1
+return
+function Board.getWidth 0
+push argument 0
+pop pointer 0
+push constant 1
+return

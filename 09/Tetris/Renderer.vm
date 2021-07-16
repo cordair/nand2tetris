@@ -1,0 +1,806 @@
+function Renderer.renderExtra 1
+push constant 7
+push argument 0
+add
+push argument 1
+call Renderer.calculateAddress 2
+pop local 0
+push local 0
+call Renderer.drawExtra 1
+pop temp 0
+push constant 0
+return
+function Renderer.renderBrick 1
+push constant 7
+push argument 0
+add
+push argument 1
+call Renderer.calculateAddress 2
+pop local 0
+push local 0
+call Renderer.drawBrick 1
+pop temp 0
+push constant 0
+return
+function Renderer.renderPanel 4
+push constant 0
+pop local 0
+push constant 6
+pop local 1
+push constant 15
+pop local 2
+label WHILE_EXP0
+push local 0
+push constant 20
+lt
+not
+if-goto WHILE_END0
+push local 1
+push local 2
+call Renderer.calculateAddress 2
+pop local 3
+push local 3
+call Renderer.drawBottomLine 1
+pop temp 0
+push local 1
+push constant 1
+add
+pop local 1
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+pop local 0
+push constant 6
+pop local 1
+push constant 0
+pop local 2
+label WHILE_EXP1
+push local 0
+push constant 16
+lt
+not
+if-goto WHILE_END1
+push local 1
+push local 2
+call Renderer.calculateAddress 2
+pop local 3
+push local 3
+call Renderer.drawRightLine 1
+pop temp 0
+push local 2
+push constant 1
+add
+pop local 2
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP1
+label WHILE_END1
+push constant 0
+pop local 0
+push constant 25
+pop local 1
+push constant 0
+pop local 2
+label WHILE_EXP2
+push local 0
+push constant 16
+lt
+not
+if-goto WHILE_END2
+push local 1
+push local 2
+call Renderer.calculateAddress 2
+pop local 3
+push local 3
+call Renderer.drawLeftLine 1
+pop temp 0
+push local 2
+push constant 1
+add
+pop local 2
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP2
+label WHILE_END2
+push constant 0
+return
+function Renderer.calculateAddress 1
+push constant 16
+pop local 0
+push argument 1
+push local 0
+call Math.multiply 2
+push constant 32
+call Math.multiply 2
+push argument 0
+push local 0
+call Math.multiply 2
+push constant 16
+call MathUtils.mod 2
+add
+push argument 0
+push local 0
+call Math.multiply 2
+push constant 16
+call Math.divide 2
+add
+return
+function Renderer.drawBrick 1
+push constant 16384
+push argument 0
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Renderer.drawTetrisBrick 1
+push constant 16384
+push argument 0
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Renderer.drawLeftLine 1
+push constant 16384
+push argument 0
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 255
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Renderer.drawRightLine 1
+push constant 16384
+push argument 0
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 256
+neg
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Renderer.drawBottomLine 1
+push constant 16384
+push argument 0
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 1
+neg
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Renderer.drawExtra 1
+push constant 16384
+push argument 0
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 32766
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Renderer.main 0
+call Renderer.renderPanel 0
+pop temp 0
+push constant 0
+push constant 15
+call Renderer.renderBrick 2
+pop temp 0
+push constant 0
+push constant 15
+call Renderer.renderExtra 2
+pop temp 0
+push constant 0
+return

@@ -9,7 +9,7 @@ class Matrix {
         let height = init_height;
         let array2d = Array.new(height);
         let i = 0;
-        while (i < height) {
+        while (i < width) {
             let array2d[i] = Array.new(width);
             let i = i + 1;
         }
@@ -24,14 +24,14 @@ class Matrix {
 
     method void set(int x, int y, int value) {
         var Array col;
-        let col = array2d[y];
-        let col[x] = value;
+        let col = array2d[x];
+        let col[y] = value;
         return;
     }
 
     method int get(int x, int y) {
         var Array col;
-        let col = array2d[y];
-        return col[x];
+        let col = array2d[x];
+        return col[y];
     }
 }

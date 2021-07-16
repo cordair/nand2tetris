@@ -9,6 +9,8 @@ class TetrisGame {
     field int next_x;
     field int next_y;
 
+    field int WIDTH;
+    field int HEIGHT;
     field int score;
     field boolean game_on;
     field boolean paused;
@@ -16,16 +18,26 @@ class TetrisGame {
     field int action;
     field boolean moved;
 
-    static field int NUMBER_OF_PIECES = 7;
-    static field int ROTATE = 0;
-	static field int LEFT   = 1;
-	static field int RIGHT  = 2;
-	static field int DROP   = 3;
-	static field int DOWN   = 4;
+    static int NUMBER_OF_PIECES;
+    static int ROTATE;
+	static int LEFT;
+	static int RIGHT;
+	static int DROP;
+	static int DOWN;
 
     constructor TetrisGame new() {
+        let NUMBER_OF_PIECES = 7;
+        let ROTATE = 0;
+        let LEFT = 1;
+        let RIGHT =2 ;
+        let DROP = 3;
+        let DOWN = 4;
+        let WIDTH = 20;
+        let HEIGHT = 16;
+
+        let board = Board.new(WIDTH, HEIGHT);
         let pieces = Piece.getPieces();
-        let board = Board.new();
+        
         return this;
     }
 
@@ -112,7 +124,7 @@ class TetrisGame {
         let current_piece = null;
         var Piece init_piece = pickNextPiece();
         var center_x = (board.getWidth() - piece.getWidth()) / 2;
-        var center_y = (board.getHeight() - piece.getHeight() / 2);
+        var center_y = (board.getHeight() - piece.getHeight()) / 2;
         var result = setCurrent(init_piece, center_x, center_y);
     }
 
@@ -122,8 +134,8 @@ class TetrisGame {
         let next_piece = current_piece;
         if (action = ROTATE) {
             let next_piece = current_piece.rotate();
-            let next_x = next_x + (next_piece.getX() - current_piece.getX()) / 2;
-            let next_y = next_y + (next_piece.getY() - current_piece.getY()) / 2;
+            let next_x = next_x + (next_piece.getWidth() - current_piece.getWidth()) / 2;
+            let next_y = next_y + (next_piece.getHeight() - current_piece.getHeight()) / 2;
         }
         if (action = DROP) {
             let next_y = board.dropHeight();
