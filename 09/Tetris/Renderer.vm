@@ -17,9 +17,19 @@ add
 push argument 1
 call Renderer.calculateAddress 2
 pop local 0
+push argument 2
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
 push local 0
-call Renderer.drawBrick 1
+call Renderer.drawTetrisBrick 1
 pop temp 0
+goto IF_END0
+label IF_FALSE0
+push local 0
+call Renderer.drawEmptyBrick 1
+pop temp 0
+label IF_END0
 push constant 0
 return
 function Renderer.renderPanel 4
@@ -791,16 +801,106 @@ call Memory.poke 2
 pop temp 0
 push constant 0
 return
-function Renderer.main 0
-call Renderer.renderPanel 0
-pop temp 0
+function Renderer.drawEmptyBrick 1
+push constant 16384
+push argument 0
+add
+pop local 0
+push local 0
 push constant 0
-push constant 15
-call Renderer.renderBrick 2
-pop temp 0
+add
 push constant 0
-push constant 15
-call Renderer.renderExtra 2
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 0
+call Memory.poke 2
 pop temp 0
 push constant 0
 return

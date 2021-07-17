@@ -17,21 +17,66 @@ class Matrix {
     }
 
     method void dispose() {
+        var int i;
+        var Array a;
+        let i = 0;
+        while (i < height) {
+            let a = array2d[i];
+            do Array.dispose(a);
+            let i = i + 1;
+        }
         do Array.dispose(array2d);
         do Memory.deAlloc(this);
         return;
     }
 
     method void set(int x, int y, int value) {
-        var Array col;
-        let col = array2d[y];
-        let col[x] = value;
+        var Array row;
+        let row = array2d[y];
+        let row[x] = value;
         return;
     }
 
     method int get(int x, int y) {
-        var Array col;
-        let col = array2d[y];
-        return col[x];
+        var Array row;
+        let row = array2d[y];
+        return row[x];
+    }
+
+    method Array getRow(int row) {
+        return array2d[row];
+    }
+
+    method void moveRow(Array newRow, int row) {
+        var int i;
+        let i = 0;
+        while (i < width) {
+            do set(row, i, newRow[i]);
+            let newRow[i] = false;
+            let i = i + 1;
+        }
+        return;
+    }
+
+    method Matrix saveMatrix() {
+        var Matrix newMatrix;
+        var Array a;
+        var int values;
+        var int i;
+        var int j;
+        let newMatrix = Matrix.new(width, height);
+        let i = 0;
+        while (i < height) {
+            let j = 0;
+            let a = newMatrix.getRow(i);
+            while (j < width) {
+                let values = get(j, i);
+                let a[j] = values;
+                let j = j + 1;
+            }
+            let i = i + 1;
+        }
+
+        return newMatrix;
     }
 }

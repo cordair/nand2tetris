@@ -1,31 +1,87 @@
-function Board.new 0
-push constant 3
+function Board.new 1
+push constant 6
 call Memory.alloc 1
 pop pointer 0
 push constant 0
-pop static 0
-push constant 1
-pop static 1
-push constant 2
 pop static 2
-push constant 3
+push constant 1
 pop static 3
-push argument 0
-pop this 0
-push argument 1
-pop this 1
-push this 0
-push this 1
-call Matrix.new 2
+push constant 2
 pop static 4
+push constant 3
+pop static 5
+push argument 0
+pop static 0
+push argument 1
+pop static 1
 push constant 0
+pop this 5
+push static 0
+push static 1
+call Matrix.new 2
+pop this 0
+push static 0
+push static 1
+call Matrix.new 2
+pop this 1
+push static 0
+call Array.new 1
 pop this 2
+push static 1
+call Array.new 1
+pop this 3
+push constant 0
+pop this 4
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push static 0
+lt
+not
+if-goto WHILE_END0
+push local 0
+push this 2
+add
+push constant 0
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+pop local 0
+label WHILE_EXP1
+push local 0
+push static 1
+lt
+not
+if-goto WHILE_END1
+push local 0
+push this 3
+add
+push constant 0
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP1
+label WHILE_END1
 push pointer 0
 return
 function Board.dispose 0
 push argument 0
 pop pointer 0
-push static 4
+push this 0
 call Matrix.dispose 1
 pop temp 0
 push pointer 0
@@ -33,10 +89,70 @@ call Memory.deAlloc 1
 pop temp 0
 push constant 0
 return
-function Board.placePiece 0
+function Board.dropHeight 4
 push argument 0
 pop pointer 0
+push constant 0
+pop local 3
+push argument 1
+call Piece.getSkirt 1
+pop local 0
+push constant 0
+pop local 2
+label WHILE_EXP0
+push local 2
+push argument 1
+call Piece.getWidth 1
+lt
+not
+if-goto WHILE_END0
+push local 2
+push local 0
+add
+pop pointer 1
+push that 0
+pop local 1
+push argument 2
+push local 2
+add
 push this 2
+add
+pop pointer 1
+push that 0
+push local 1
+add
+push local 3
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push argument 2
+push local 2
+add
+push this 2
+add
+pop pointer 1
+push that 0
+push local 1
+add
+pop local 3
+label IF_FALSE0
+push local 2
+push constant 1
+add
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push static 1
+push constant 1
+sub
+push local 3
+sub
+return
+function Board.placePiece 6
+push argument 0
+pop pointer 0
+push this 4
 if-goto IF_TRUE0
 goto IF_FALSE0
 label IF_TRUE0
@@ -83,18 +199,167 @@ call String.appendChar 2
 call Output.printString 1
 pop temp 0
 label IF_FALSE0
-push static 3
+push pointer 0
+call Board.saveBoard 1
+pop temp 0
+push argument 1
+call Piece.getBody 1
+pop local 0
+push constant 0
+pop local 2
+push static 2
+pop local 3
+label WHILE_EXP0
+push local 2
+push constant 4
+lt
+not
+if-goto WHILE_END0
+push local 2
+push local 0
+add
+pop pointer 1
+push that 0
+pop local 1
+push argument 2
+push local 1
+call Point.getX 1
+add
+pop local 4
+push argument 3
+push local 1
+call Point.getY 1
+add
+pop local 5
+push local 4
+push static 0
+push constant 1
+sub
+gt
+push local 4
+push constant 0
+lt
+or
+push local 5
+push static 1
+push constant 1
+sub
+gt
+or
+push local 5
+push constant 2
+lt
+or
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push static 4
 return
-function Board.clearRows 0
+goto IF_END1
+label IF_FALSE1
+push this 0
+push local 4
+push local 5
+call Matrix.get 3
+push constant 1
+eq
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push static 5
+return
+label IF_FALSE2
+push this 0
+push local 4
+push local 5
+push constant 1
+call Matrix.set 4
+pop temp 0
+push local 4
+push this 2
+add
+push local 4
+push this 2
+add
+pop pointer 1
+push that 0
+push constant 1
+add
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 5
+push this 3
+add
+push local 5
+push this 3
+add
+pop pointer 1
+push that 0
+push constant 1
+add
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 4
+push this 2
+add
+pop pointer 1
+push that 0
+push this 5
+gt
+if-goto IF_TRUE3
+goto IF_FALSE3
+label IF_TRUE3
+push local 4
+push this 2
+add
+pop pointer 1
+push that 0
+push constant 1
+add
+pop this 5
+label IF_FALSE3
+push local 5
+push this 3
+add
+pop pointer 1
+push that 0
+push static 0
+eq
+if-goto IF_TRUE4
+goto IF_FALSE4
+label IF_TRUE4
+push static 3
+pop local 3
+label IF_FALSE4
+label IF_END1
+push local 2
+push constant 1
+add
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push local 3
+return
+function Board.saveBoard 0
 push argument 0
 pop pointer 0
-push constant 1
+push this 0
+call Matrix.saveMatrix 1
+pop this 1
+push constant 0
 return
 function Board.undo 0
 push argument 0
 pop pointer 0
 push constant 0
-pop this 2
+not
+pop this 4
+push this 1
+pop this 0
 push constant 0
 return
 function Board.commit 0
@@ -102,16 +367,348 @@ push argument 0
 pop pointer 0
 push constant 0
 not
-pop this 2
+pop this 4
+push constant 0
+return
+function Board.clearRows 1
+push argument 0
+pop pointer 0
+push pointer 0
+call Board.countRowsToClear 1
+pop local 0
+push pointer 0
+push local 0
+call Board.shiftRows 2
+pop temp 0
+push pointer 0
+push local 0
+call Board.updateHeightArray 2
+pop temp 0
+push pointer 0
+push local 0
+call Board.updateWidthArray 2
+pop temp 0
+push local 0
+return
+function Board.countRowsToClear 2
+push argument 0
+pop pointer 0
+push constant 0
+pop local 1
+push static 1
+push constant 1
+sub
+pop local 0
+label WHILE_EXP0
+push local 0
+push constant 1
+gt
+not
+if-goto WHILE_END0
+push local 0
+push this 3
+add
+pop pointer 1
+push that 0
+push static 0
+eq
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push local 1
+push constant 1
+add
+pop local 1
+label IF_FALSE0
+push local 0
+push constant 1
+sub
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push local 1
+return
+function Board.shiftRows 2
+push argument 0
+pop pointer 0
+push argument 1
+pop local 1
+label WHILE_EXP0
+push local 1
+push constant 0
+gt
+not
+if-goto WHILE_END0
+push this 0
+push static 1
+push constant 1
+sub
+push local 1
+sub
+call Matrix.getRow 2
+pop local 0
+push this 0
+push local 0
+push static 1
+push constant 1
+sub
+push argument 1
+push local 1
+sub
+sub
+call Matrix.moveRow 3
+pop temp 0
+push local 1
+push constant 1
+sub
+pop local 1
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function Board.updateHeightArray 1
+push argument 0
+pop pointer 0
+push constant 0
+pop local 0
+label WHILE_EXP0
+push local 0
+push static 0
+lt
+not
+if-goto WHILE_END0
+push local 0
+push this 2
+add
+push local 0
+push this 2
+add
+pop pointer 1
+push that 0
+push argument 1
+sub
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+function Board.updateWidthArray 1
+push argument 0
+pop pointer 0
+push constant 0
+pop local 0
+label WHILE_EXP0
+push argument 1
+push constant 0
+gt
+not
+if-goto WHILE_END0
+push static 1
+push constant 1
+sub
+push argument 1
+sub
+push this 3
+add
+push constant 0
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push argument 1
+push constant 1
+sub
+pop argument 1
+goto WHILE_EXP0
+label WHILE_END0
 push constant 0
 return
 function Board.getHeight 0
 push argument 0
 pop pointer 0
-push constant 1
+push argument 1
+push this 3
+add
+pop pointer 1
+push that 0
 return
 function Board.getWidth 0
 push argument 0
 pop pointer 0
+push argument 1
+push this 2
+add
+pop pointer 1
+push that 0
+return
+function Board.getMaxHeight 0
+push argument 0
+pop pointer 0
+push this 5
+return
+function Board.getBoard 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function Board.PLACE_OK 0
+push static 2
+return
+function Board.PLACE_OUT_BOUNDS 0
+push static 4
+return
+function Board.PLACE_ROW_FILLED 0
+push static 3
+return
+function Board.PLACE_BAD 0
+push static 5
+return
+function Board.WIDTH 0
+push static 0
+return
+function Board.HEIGHT 0
+push static 1
+return
+function Board.modifyBoard 5
+push argument 0
+pop pointer 0
+push constant 4
+call Array.new 1
+pop local 3
+push constant 0
+push constant 0
+call Point.new 2
+pop local 4
+push constant 0
+push local 3
+add
+push local 4
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
 push constant 1
+push constant 0
+call Point.new 2
+pop local 4
+push constant 1
+push local 3
+add
+push local 4
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push constant 2
+push constant 0
+call Point.new 2
+pop local 4
+push constant 2
+push local 3
+add
+push local 4
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push constant 3
+push constant 0
+call Point.new 2
+pop local 4
+push constant 3
+push local 3
+add
+push local 4
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push constant 0
+push local 3
+add
+pop pointer 1
+push that 0
+push constant 1
+push local 3
+add
+pop pointer 1
+push that 0
+push constant 2
+push local 3
+add
+pop pointer 1
+push that 0
+push constant 3
+push local 3
+add
+pop pointer 1
+push that 0
+call Piece.new 4
+pop local 2
+push constant 0
+pop local 0
+push constant 0
+pop local 1
+push pointer 0
+push local 2
+push constant 2
+push constant 2
+call Board.placePiece 4
+pop temp 0
+push pointer 0
+call Board.clearRows 1
+pop temp 0
+push constant 0
+return
+function Board.printBoard 3
+push argument 0
+pop pointer 0
+push constant 0
+pop local 0
+push constant 0
+pop local 1
+label WHILE_EXP0
+push local 0
+push static 1
+lt
+not
+if-goto WHILE_END0
+push constant 0
+pop local 1
+label WHILE_EXP1
+push local 1
+push static 0
+lt
+not
+if-goto WHILE_END1
+push this 0
+push local 1
+push local 0
+call Matrix.get 3
+pop local 2
+push local 2
+call Output.printInt 1
+pop temp 0
+push local 1
+push constant 1
+add
+pop local 1
+goto WHILE_EXP1
+label WHILE_END1
+call Output.println 0
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
 return

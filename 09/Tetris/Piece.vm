@@ -19,9 +19,6 @@ pop static 7
 push constant 4
 call Array.new 1
 pop this 0
-push constant 7
-call Array.new 1
-pop static 0
 push constant 0
 push this 0
 add
@@ -79,21 +76,6 @@ call Memory.deAlloc 1
 pop temp 0
 push constant 0
 return
-function Piece.getBody 0
-push argument 0
-pop pointer 0
-push this 0
-return
-function Piece.skirt 0
-push argument 0
-pop pointer 0
-push this 1
-return
-function Piece.rotate 0
-push argument 0
-pop pointer 0
-push this 2
-return
 function Piece.calculatePieceRotation 10
 push argument 0
 pop pointer 0
@@ -132,7 +114,7 @@ push local 2
 call Point.getX 1
 pop local 1
 push local 0
-push local 0
+push local 1
 call Point.new 2
 pop local 6
 push this 4
@@ -146,7 +128,7 @@ push local 3
 call Point.getX 1
 pop local 1
 push local 0
-push local 0
+push local 1
 call Point.new 2
 pop local 7
 push this 4
@@ -160,7 +142,7 @@ push local 4
 call Point.getX 1
 pop local 1
 push local 0
-push local 0
+push local 1
 call Point.new 2
 pop local 8
 push this 4
@@ -174,7 +156,7 @@ push local 5
 call Point.getX 1
 pop local 1
 push local 0
-push local 0
+push local 1
 call Point.new 2
 pop local 9
 push local 6
@@ -183,14 +165,18 @@ push local 8
 push local 9
 call Piece.new 4
 return
-function Piece.equals 4
+function Piece.equals 6
 push argument 0
 pop pointer 0
 push argument 1
 call Piece.getBody 1
-pop local 1
+pop local 3
 push constant 0
 pop local 0
+push constant 0
+pop local 1
+push constant 0
+pop local 2
 label WHILE_EXP0
 push local 0
 push constant 4
@@ -198,40 +184,62 @@ lt
 not
 if-goto WHILE_END0
 push local 0
-push local 1
-add
-pop pointer 1
-push that 0
-pop local 2
-push local 0
 push this 0
 add
 pop pointer 1
 push that 0
-pop local 3
-push local 3
-push local 2
-call Point.equals 2
+pop local 5
+push constant 0
+pop local 1
+label WHILE_EXP1
+push local 1
+push constant 4
+lt
 not
+if-goto WHILE_END1
+push local 1
+push local 3
+add
+pop pointer 1
+push that 0
+pop local 4
+push local 5
+push local 4
+call Point.equals 2
 if-goto IF_TRUE0
 goto IF_FALSE0
 label IF_TRUE0
-push constant 0
-return
+push local 2
+push constant 1
+add
+pop local 2
 label IF_FALSE0
+push local 1
+push constant 1
+add
+pop local 1
+goto WHILE_EXP1
+label WHILE_END1
 push local 0
 push constant 1
 add
 pop local 0
 goto WHILE_EXP0
 label WHILE_END0
+push local 2
+push constant 4
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
 push constant 0
 not
 return
+label IF_FALSE1
+push constant 0
+return
 function Piece.createRotations 8
 push argument 0
-pop pointer 0
-push argument 1
 push static 1
 eq
 if-goto IF_TRUE0
@@ -254,7 +262,7 @@ push constant 3
 call Point.new 2
 pop local 3
 label IF_FALSE0
-push argument 1
+push argument 0
 push static 4
 eq
 if-goto IF_TRUE1
@@ -277,7 +285,7 @@ push constant 1
 call Point.new 2
 pop local 3
 label IF_FALSE1
-push argument 1
+push argument 0
 push static 5
 eq
 if-goto IF_TRUE2
@@ -300,7 +308,7 @@ push constant 0
 call Point.new 2
 pop local 3
 label IF_FALSE2
-push argument 1
+push argument 0
 push static 2
 eq
 if-goto IF_TRUE3
@@ -323,7 +331,7 @@ push constant 0
 call Point.new 2
 pop local 3
 label IF_FALSE3
-push argument 1
+push argument 0
 push static 3
 eq
 if-goto IF_TRUE4
@@ -346,7 +354,7 @@ push constant 2
 call Point.new 2
 pop local 3
 label IF_FALSE4
-push argument 1
+push argument 0
 push static 6
 eq
 if-goto IF_TRUE5
@@ -369,7 +377,7 @@ push constant 1
 call Point.new 2
 pop local 3
 label IF_FALSE5
-push argument 1
+push argument 0
 push static 7
 eq
 if-goto IF_TRUE6
@@ -419,7 +427,6 @@ label IF_TRUE7
 push constant 0
 not
 pop local 7
-goto IF_END7
 label IF_FALSE7
 push local 4
 push local 5
@@ -427,21 +434,19 @@ call Piece.setNext 2
 pop temp 0
 push local 5
 pop local 4
-label IF_END7
 goto WHILE_EXP0
 label WHILE_END0
-push local 5
+push local 6
 return
-function Piece.getPieces 0
+function Piece.getPieces 3
 push constant 7
 call Array.new 1
 pop static 0
 push constant 0
 push static 0
 add
-push static 0
 push static 1
-call Array.createRotations 2
+call Piece.createRotations 1
 pop temp 0
 pop pointer 1
 push temp 0
@@ -449,9 +454,8 @@ pop that 0
 push constant 1
 push static 0
 add
-push static 0
 push static 2
-call Array.createRotations 2
+call Piece.createRotations 1
 pop temp 0
 pop pointer 1
 push temp 0
@@ -459,9 +463,8 @@ pop that 0
 push constant 2
 push static 0
 add
-push static 0
 push static 3
-call Array.createRotations 2
+call Piece.createRotations 1
 pop temp 0
 pop pointer 1
 push temp 0
@@ -469,9 +472,8 @@ pop that 0
 push constant 3
 push static 0
 add
-push static 0
 push static 4
-call Array.createRotations 2
+call Piece.createRotations 1
 pop temp 0
 pop pointer 1
 push temp 0
@@ -479,9 +481,8 @@ pop that 0
 push constant 4
 push static 0
 add
-push static 0
 push static 5
-call Array.createRotations 2
+call Piece.createRotations 1
 pop temp 0
 pop pointer 1
 push temp 0
@@ -489,9 +490,8 @@ pop that 0
 push constant 5
 push static 0
 add
-push static 0
 push static 6
-call Array.createRotations 2
+call Piece.createRotations 1
 pop temp 0
 pop pointer 1
 push temp 0
@@ -499,9 +499,8 @@ pop that 0
 push constant 6
 push static 0
 add
-push static 0
 push static 7
-call Array.createRotations 2
+call Piece.createRotations 1
 pop temp 0
 pop pointer 1
 push temp 0
@@ -551,6 +550,10 @@ push local 3
 call Point.getY 1
 pop local 2
 label IF_FALSE1
+push local 0
+push constant 1
+add
+pop local 0
 goto WHILE_EXP0
 label WHILE_END0
 push local 1
@@ -573,7 +576,7 @@ push constant 0
 pop local 0
 label WHILE_EXP0
 push local 0
-push constant 0
+push constant 4
 lt
 not
 if-goto WHILE_END0
@@ -676,6 +679,9 @@ add
 pop local 0
 goto WHILE_EXP2
 label WHILE_END2
+push local 2
+call Array.dispose 1
+pop temp 0
 push constant 0
 return
 function Piece.getWidth 0
@@ -687,6 +693,21 @@ function Piece.getHeight 0
 push argument 0
 pop pointer 0
 push this 4
+return
+function Piece.getBody 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function Piece.getSkirt 0
+push argument 0
+pop pointer 0
+push this 1
+return
+function Piece.rotate 0
+push argument 0
+pop pointer 0
+push this 2
 return
 function Piece.setNext 0
 push argument 0

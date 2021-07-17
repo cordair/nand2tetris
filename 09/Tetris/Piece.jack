@@ -174,10 +174,8 @@ class Piece {
             if (pieceRotation.equals(piece)) {
                 let lastPieceReached = true;
             }
-            else {
-                do curentPiece.setNext(pieceRotation);
-                let curentPiece = pieceRotation;
-            }
+            do curentPiece.setNext(pieceRotation);
+            let curentPiece = pieceRotation;
         }
 
         return piece;
