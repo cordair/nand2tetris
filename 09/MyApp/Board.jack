@@ -7,19 +7,17 @@ class Board {
     field Array savedWidths;
 
     field boolean committed;
-    field boolean firstState;
     field int maxHeight;
     field int savedMaxHeight;
 
     static int WIDTH;
     static int HEIGHT;
-    static int TOP_SPACE;
     static int PLACE_OK;
     static int PLACE_ROW_FILLED;
     static int PLACE_OUT_BOUNDS;
     static int PLACE_BAD;
 
-    constructor Board new(int width, int height, int topSpace) {
+    constructor Board new(int width, int height) {
         var int i;
         let PLACE_OK = 0;
         let PLACE_ROW_FILLED = 1;
@@ -28,7 +26,6 @@ class Board {
 
         let WIDTH = width;
         let HEIGHT = height;
-        let TOP_SPACE = topSpace;
         let maxHeight = 0;
         let board = Matrix.new(WIDTH, HEIGHT);
         let heights = Array.new(WIDTH);
@@ -38,7 +35,6 @@ class Board {
         let savedHeights = Array.new(WIDTH);
 
         let committed = false;
-        let firstState = true;
 
         let i = 0;
         while (i < WIDTH) {
@@ -95,7 +91,7 @@ class Board {
             let point = pieceBody[i];
             let boardX = x + point.getX();
             let boardY = y + point.getY();               
-            if ((boardX > (WIDTH - 1)) | (boardX < 0) | (boardY > (HEIGHT - 1)) | (boardY < 0)) {
+            if (boardX > (WIDTH - 1) | (boardX < 0) | (boardY > (HEIGHT - 1)) | (boardY < 2)) {
                 return PLACE_OUT_BOUNDS;
             }
             else {
@@ -104,10 +100,10 @@ class Board {
                 }
                 do board.set(boardX, boardY, 1);
 
-                if ((HEIGHT - boardY) > heights[boardX]) {
-                    let heights[boardX] = HEIGHT - boardY;
+                if ((HEIGHT - 1 - boardY) > heights[boardX]) {
+                    let heights[boardX] = HEIGHT - 1 - boardY;
                 }
-                if ((heights[boardX]) > maxHeight) { let maxHeight = heights[boardX]; }
+                if (heights[boardX] > maxHeight) { let maxHeight = heights[boardX] + 1; }
 
                 let widths[boardY] = widths[boardY] + 1;
                 if (widths[boardY] = WIDTH) { let result = PLACE_ROW_FILLED; }
@@ -120,7 +116,6 @@ class Board {
     method void save() {
         var int i;
         var int values;
-        let firstState = false;
         let savedBoard = board.saveMatrix();
         let i = 0;
         while (i < WIDTH) {
@@ -143,8 +138,6 @@ class Board {
     method void undo() {
         var Array a;
         var Array b;
-        if (firstState | committed) { return; }
-
         do board.dispose();
         let board = savedBoard;
         let a = widths;
@@ -168,9 +161,9 @@ class Board {
     method int clearRows() {
         var int numberToClear;
         let numberToClear = countRowsToClear();
-        do updateHeight(numberToClear);
-        do updateWidth(numberToClear);
         do shiftRows(numberToClear);
+        do updateHeightArray(numberToClear);
+        do updateWidthArray(numberToClear);
         if (committed) { do save(); }
         let committed = false;
         return numberToClear;
@@ -181,8 +174,10 @@ class Board {
         var int count;
         let count = 0;
         let i = HEIGHT - 1;
-        while ((i > (TOP_SPACE - 1)) & (widths[i] = WIDTH)) {
-            let count = count + 1;
+        while (i > 1) {
+            if (widths[i] = WIDTH) {
+                let count = count + 1;
+            }
             let i = i - 1;
         }
         return count;
@@ -190,47 +185,32 @@ class Board {
 
     method void shiftRows(int n) {
         var Array a;
-        var Array b;
-        var int values;
-        var int i, j;
-        let i = 0;
-        let j = 0;
-        if (maxHeight < n) { let maxHeight = n; }
-        while (i < maxHeight) {
-            let a = board.getRow(HEIGHT - i - 1 - n);
-            let b = board.getRow(HEIGHT - i - 1);
-            let j = 0;
-            while (j < WIDTH) {
-                let values = a[j];
-                let a[j] = 0;
-                let b[j] = values;
-                let j = j + 1;
-            }
-            let i = i + 1;
+        var int count;
+        let count = n;
+        while (count > 0) {
+            let a = board.getRow(HEIGHT - 1 - count);
+            do board.moveRow(a, HEIGHT - 1 - (n - count));
+            let count = count - 1;
         }
         return;
     }
 
-    method void updateHeight(int n) {
+    method void updateHeightArray(int n) {
         var int i;
         let i = 0;
         while (i < WIDTH) {
             let heights[i] = heights[i] - n;
             let i = i + 1;
         }
-        let maxHeight = maxHeight - n;
         return;
     }
 
-    method void updateWidth(int n) {
-        var int i, values;
+    method void updateWidthArray(int n) {
+        var int i;
         let i = 0;
-        if (maxHeight < n) { let maxHeight = n; }
-        while (i < maxHeight) {
-            let values = widths[HEIGHT - i - 1 - n];
-            let widths[HEIGHT - i - 1] = values;
-            let widths[HEIGHT - i - 1 - n] = 0;
-            let i = i + 1;
+        while (n > 0) {
+            let widths[HEIGHT - 1 - n] = 0;
+            let n = n - 1;
         }
         return;
     }

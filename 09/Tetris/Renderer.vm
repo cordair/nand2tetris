@@ -1,9 +1,10 @@
 function Renderer.renderExtra 1
-push constant 7
+push constant 6
 push argument 0
 add
 push argument 1
-call Renderer.calculateAddress 2
+push constant 8
+call Renderer.calculateAddress 3
 pop local 0
 push local 0
 call Renderer.drawExtra 1
@@ -11,11 +12,12 @@ pop temp 0
 push constant 0
 return
 function Renderer.renderBrick 1
-push constant 7
+push constant 6
 push argument 0
 add
 push argument 1
-call Renderer.calculateAddress 2
+push constant 8
+call Renderer.calculateAddress 3
 pop local 0
 push argument 2
 if-goto IF_TRUE0
@@ -47,7 +49,8 @@ not
 if-goto WHILE_END0
 push local 1
 push local 2
-call Renderer.calculateAddress 2
+push constant 0
+call Renderer.calculateAddress 3
 pop local 3
 push local 3
 call Renderer.drawBottomLine 1
@@ -64,7 +67,7 @@ goto WHILE_EXP0
 label WHILE_END0
 push constant 0
 pop local 0
-push constant 6
+push constant 5
 pop local 1
 push constant 0
 pop local 2
@@ -76,7 +79,8 @@ not
 if-goto WHILE_END1
 push local 1
 push local 2
-call Renderer.calculateAddress 2
+push constant 0
+call Renderer.calculateAddress 3
 pop local 3
 push local 3
 call Renderer.drawRightLine 1
@@ -93,7 +97,7 @@ goto WHILE_EXP1
 label WHILE_END1
 push constant 0
 pop local 0
-push constant 25
+push constant 26
 pop local 1
 push constant 0
 pop local 2
@@ -105,7 +109,8 @@ not
 if-goto WHILE_END2
 push local 1
 push local 2
-call Renderer.calculateAddress 2
+push constant 0
+call Renderer.calculateAddress 3
 pop local 3
 push local 3
 call Renderer.drawLeftLine 1
@@ -128,6 +133,8 @@ pop local 0
 push argument 1
 push local 0
 call Math.multiply 2
+push argument 2
+sub
 push constant 32
 call Math.multiply 2
 push argument 0

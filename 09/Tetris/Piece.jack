@@ -16,14 +16,6 @@ class Piece {
 	static int PYRAMID;
 
     constructor Piece new(Point p0, Point p1, Point p2, Point p3) {
-        let STICK = 0;
-        let L1 = 1;
-        let L2 = 2;
-        let S1 = 3;
-        let S2 = 4;
-        let SQUARE = 5;
-        let PYRAMID = 6;
-
         let body = Array.new(4);
         let body[0] = p0;
         let body[1] = p1;
@@ -173,9 +165,13 @@ class Piece {
             let pieceRotation = curentPiece.calculatePieceRotation();
             if (pieceRotation.equals(piece)) {
                 let lastPieceReached = true;
+                do curentPiece.setNext(piece);
+                do pieceRotation.dispose();
             }
-            do curentPiece.setNext(pieceRotation);
-            let curentPiece = pieceRotation;
+            else {
+                do curentPiece.setNext(pieceRotation);
+                let curentPiece = pieceRotation;
+            }
         }
 
         return piece;
@@ -187,6 +183,13 @@ class Piece {
         var Piece currentPiece;
 
         let pieces = Array.new(7);
+        let STICK = 0;
+        let L1 = 1;
+        let L2 = 2;
+        let S1 = 3;
+        let S2 = 4;
+        let SQUARE = 5;
+        let PYRAMID = 6;
         
         let pieces[0] = Piece.createRotations(STICK);
         let pieces[1] = Piece.createRotations(L1);

@@ -1,14 +1,19 @@
+/**
+* The numbers in this class are pretty hardcoded
+*
+*/
+
 class Renderer {
     function void renderExtra(int x, int y) {
         var int addr;
-        let addr = Renderer.calculateAddress(7 + x, y);
+        let addr = Renderer.calculateAddress(6 + x, y, 8);
         do Renderer.drawExtra(addr);
         return;
     }
     
     function void renderBrick(int x, int y, boolean color) {
         var int addr;
-        let addr = Renderer.calculateAddress(7 + x, y);
+        let addr = Renderer.calculateAddress(6 + x, y, 8);
         if (color) { do Renderer.drawTetrisBrick(addr); }
         else { do Renderer.drawEmptyBrick(addr); }
         return;
@@ -24,27 +29,27 @@ class Renderer {
         let x = 6;
         let y = 15;
         while (i < 20) {
-            let addr = Renderer.calculateAddress(x, y);
+            let addr = Renderer.calculateAddress(x, y, 0);
             do Renderer.drawBottomLine(addr);
             let x = x + 1;
             let i = i + 1;
         }
 
         let i = 0;
-        let x = 6;
+        let x = 5;
         let y = 0;
         while (i < 16) {
-            let addr = Renderer.calculateAddress(x, y);
+            let addr = Renderer.calculateAddress(x, y, 0);
             do Renderer.drawRightLine(addr);
             let y = y + 1;
             let i = i + 1;
         }
 
         let i = 0;
-        let x = 25;
+        let x = 26;
         let y = 0;
         while (i < 16) {
-            let addr = Renderer.calculateAddress(x, y);
+            let addr = Renderer.calculateAddress(x, y, 0);
             do Renderer.drawLeftLine(addr);
             let y = y + 1;
             let i = i + 1;
@@ -53,10 +58,10 @@ class Renderer {
         return;
     }
 
-    function int calculateAddress(int x, int y) {
+    function int calculateAddress(int x, int y, int up) {
         var int SPRITE_SIZE;
         let SPRITE_SIZE = 16;
-        return ((y * SPRITE_SIZE) * 32) + MathUtils.mod((x * SPRITE_SIZE), 16) + ((x * SPRITE_SIZE) / 16);
+        return ((y * SPRITE_SIZE - up) * 32) + MathUtils.mod((x * SPRITE_SIZE), 16) + ((x * SPRITE_SIZE) / 16);
     }
 
     function void drawBrick(int location) {

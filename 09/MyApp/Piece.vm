@@ -427,7 +427,6 @@ label IF_TRUE7
 push constant 0
 not
 pop local 7
-goto IF_END7
 label IF_FALSE7
 push local 4
 push local 5
@@ -435,7 +434,6 @@ call Piece.setNext 2
 pop temp 0
 push local 5
 pop local 4
-label IF_END7
 goto WHILE_EXP0
 label WHILE_END0
 push local 6
@@ -701,7 +699,7 @@ push argument 0
 pop pointer 0
 push this 0
 return
-function Piece.skirt 0
+function Piece.getSkirt 0
 push argument 0
 pop pointer 0
 push this 1

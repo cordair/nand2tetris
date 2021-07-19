@@ -2,20 +2,6 @@ function Piece.new 0
 push constant 5
 call Memory.alloc 1
 pop pointer 0
-push constant 0
-pop static 1
-push constant 1
-pop static 2
-push constant 2
-pop static 3
-push constant 3
-pop static 4
-push constant 4
-pop static 5
-push constant 5
-pop static 6
-push constant 6
-pop static 7
 push constant 4
 call Array.new 1
 pop this 0
@@ -427,6 +413,14 @@ label IF_TRUE7
 push constant 0
 not
 pop local 7
+push local 4
+push local 6
+call Piece.setNext 2
+pop temp 0
+push local 5
+call Piece.dispose 1
+pop temp 0
+goto IF_END7
 label IF_FALSE7
 push local 4
 push local 5
@@ -434,6 +428,7 @@ call Piece.setNext 2
 pop temp 0
 push local 5
 pop local 4
+label IF_END7
 goto WHILE_EXP0
 label WHILE_END0
 push local 6
@@ -442,6 +437,20 @@ function Piece.getPieces 3
 push constant 7
 call Array.new 1
 pop static 0
+push constant 0
+pop static 1
+push constant 1
+pop static 2
+push constant 2
+pop static 3
+push constant 3
+pop static 4
+push constant 4
+pop static 5
+push constant 5
+pop static 6
+push constant 6
+pop static 7
 push constant 0
 push static 0
 add

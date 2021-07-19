@@ -1,23 +1,21 @@
 function Board.new 1
-push constant 10
+push constant 9
 call Memory.alloc 1
 pop pointer 0
 push constant 0
-pop static 3
+pop static 2
 push constant 1
-pop static 4
+pop static 3
 push constant 2
-pop static 5
+pop static 4
 push constant 3
-pop static 6
+pop static 5
 push argument 0
 pop static 0
 push argument 1
 pop static 1
-push argument 2
-pop static 2
 push constant 0
-pop this 8
+pop this 7
 push static 0
 push static 1
 call Matrix.new 2
@@ -40,9 +38,6 @@ call Array.new 1
 pop this 4
 push constant 0
 pop this 6
-push constant 0
-not
-pop this 7
 push constant 0
 pop local 0
 label WHILE_EXP0
@@ -219,7 +214,7 @@ call Piece.getBody 1
 pop local 0
 push constant 0
 pop local 2
-push static 3
+push static 2
 pop local 3
 label WHILE_EXP0
 push local 2
@@ -259,13 +254,13 @@ sub
 gt
 or
 push local 5
-push constant 0
+push constant 2
 lt
 or
 if-goto IF_TRUE1
 goto IF_FALSE1
 label IF_TRUE1
-push static 5
+push static 4
 return
 goto IF_END1
 label IF_FALSE1
@@ -278,7 +273,7 @@ eq
 if-goto IF_TRUE2
 goto IF_FALSE2
 label IF_TRUE2
-push static 6
+push static 5
 return
 label IF_FALSE2
 push this 0
@@ -288,6 +283,8 @@ push constant 1
 call Matrix.set 4
 pop temp 0
 push static 1
+push constant 1
+sub
 push local 5
 sub
 push local 4
@@ -303,6 +300,8 @@ push local 4
 push this 1
 add
 push static 1
+push constant 1
+sub
 push local 5
 sub
 pop temp 0
@@ -315,7 +314,7 @@ push this 1
 add
 pop pointer 1
 push that 0
-push this 8
+push this 7
 gt
 if-goto IF_TRUE4
 goto IF_FALSE4
@@ -325,7 +324,9 @@ push this 1
 add
 pop pointer 1
 push that 0
-pop this 8
+push constant 1
+add
+pop this 7
 label IF_FALSE4
 push local 5
 push this 2
@@ -351,7 +352,7 @@ eq
 if-goto IF_TRUE5
 goto IF_FALSE5
 label IF_TRUE5
-push static 4
+push static 3
 pop local 3
 label IF_FALSE5
 label IF_END1
@@ -366,8 +367,6 @@ return
 function Board.save 2
 push argument 0
 pop pointer 0
-push constant 0
-pop this 7
 push this 0
 call Matrix.saveMatrix 1
 pop this 3
@@ -427,8 +426,8 @@ add
 pop local 0
 goto WHILE_EXP1
 label WHILE_END1
-push this 8
-pop this 9
+push this 7
+pop this 8
 push constant 0
 pop this 6
 push constant 0
@@ -436,15 +435,6 @@ return
 function Board.undo 2
 push argument 0
 pop pointer 0
-push this 7
-push this 6
-or
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
-push constant 0
-return
-label IF_FALSE0
 push this 0
 call Matrix.dispose 1
 pop temp 0
@@ -462,8 +452,8 @@ push this 4
 pop this 1
 push local 1
 pop this 4
-push this 9
-pop this 8
+push this 8
+pop this 7
 push constant 0
 not
 pop this 6
@@ -485,15 +475,15 @@ call Board.countRowsToClear 1
 pop local 0
 push pointer 0
 push local 0
-call Board.updateHeight 2
-pop temp 0
-push pointer 0
-push local 0
-call Board.updateWidth 2
-pop temp 0
-push pointer 0
-push local 0
 call Board.shiftRows 2
+pop temp 0
+push pointer 0
+push local 0
+call Board.updateHeightArray 2
+pop temp 0
+push pointer 0
+push local 0
+call Board.updateWidthArray 2
 pop temp 0
 push this 6
 if-goto IF_TRUE0
@@ -518,10 +508,10 @@ sub
 pop local 0
 label WHILE_EXP0
 push local 0
-push static 2
 push constant 1
-sub
 gt
+not
+if-goto WHILE_END0
 push local 0
 push this 2
 add
@@ -529,106 +519,61 @@ pop pointer 1
 push that 0
 push static 0
 eq
-and
-not
-if-goto WHILE_END0
-push local 1
-push constant 1
-add
-pop local 1
-push local 0
-push constant 1
-sub
-pop local 0
-goto WHILE_EXP0
-label WHILE_END0
-push local 1
-return
-function Board.shiftRows 5
-push argument 0
-pop pointer 0
-push constant 0
-pop local 3
-push constant 0
-pop local 4
-push this 8
-push argument 1
-lt
 if-goto IF_TRUE0
 goto IF_FALSE0
 label IF_TRUE0
-push argument 1
-pop this 8
+push local 1
+push constant 1
+add
+pop local 1
 label IF_FALSE0
+push local 0
+push constant 1
+sub
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push local 1
+return
+function Board.shiftRows 2
+push argument 0
+pop pointer 0
+push argument 1
+pop local 1
 label WHILE_EXP0
-push local 3
-push this 8
-lt
+push local 1
+push constant 0
+gt
 not
 if-goto WHILE_END0
 push this 0
 push static 1
-push local 3
-sub
 push constant 1
 sub
-push argument 1
+push local 1
 sub
 call Matrix.getRow 2
 pop local 0
 push this 0
+push local 0
 push static 1
-push local 3
-sub
 push constant 1
 sub
-call Matrix.getRow 2
-pop local 1
-push constant 0
-pop local 4
-label WHILE_EXP1
-push local 4
-push static 0
-lt
-not
-if-goto WHILE_END1
-push local 4
-push local 0
-add
-pop pointer 1
-push that 0
-pop local 2
-push local 4
-push local 0
-add
-push constant 0
-pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
-push local 4
+push argument 1
 push local 1
-add
-push local 2
+sub
+sub
+call Matrix.moveRow 3
 pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
-push local 4
+push local 1
 push constant 1
-add
-pop local 4
-goto WHILE_EXP1
-label WHILE_END1
-push local 3
-push constant 1
-add
-pop local 3
+sub
+pop local 1
 goto WHILE_EXP0
 label WHILE_END0
 push constant 0
 return
-function Board.updateHeight 1
+function Board.updateHeightArray 1
 push argument 0
 pop pointer 0
 push constant 0
@@ -659,59 +604,20 @@ add
 pop local 0
 goto WHILE_EXP0
 label WHILE_END0
-push this 8
-push argument 1
-sub
-pop this 8
 push constant 0
 return
-function Board.updateWidth 2
+function Board.updateWidthArray 1
 push argument 0
 pop pointer 0
 push constant 0
 pop local 0
-push this 8
-push argument 1
-lt
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
-push argument 1
-pop this 8
-label IF_FALSE0
 label WHILE_EXP0
-push local 0
-push this 8
-lt
+push argument 1
+push constant 0
+gt
 not
 if-goto WHILE_END0
 push static 1
-push local 0
-sub
-push constant 1
-sub
-push argument 1
-sub
-push this 2
-add
-pop pointer 1
-push that 0
-pop local 1
-push static 1
-push local 0
-sub
-push constant 1
-sub
-push this 2
-add
-push local 1
-pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
-push static 1
-push local 0
-sub
 push constant 1
 sub
 push argument 1
@@ -723,10 +629,10 @@ pop temp 0
 pop pointer 1
 push temp 0
 pop that 0
-push local 0
+push argument 1
 push constant 1
-add
-pop local 0
+sub
+pop argument 1
 goto WHILE_EXP0
 label WHILE_END0
 push constant 0
@@ -752,7 +658,7 @@ return
 function Board.getMaxHeight 0
 push argument 0
 pop pointer 0
-push this 8
+push this 7
 return
 function Board.getBoard 0
 push argument 0
@@ -760,16 +666,16 @@ pop pointer 0
 push this 0
 return
 function Board.PLACE_OK 0
-push static 3
+push static 2
 return
 function Board.PLACE_OUT_BOUNDS 0
-push static 5
-return
-function Board.PLACE_ROW_FILLED 0
 push static 4
 return
+function Board.PLACE_ROW_FILLED 0
+push static 3
+return
 function Board.PLACE_BAD 0
-push static 6
+push static 5
 return
 function Board.WIDTH 0
 push static 0

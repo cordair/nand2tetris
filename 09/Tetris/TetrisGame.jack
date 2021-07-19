@@ -3,6 +3,7 @@ class TetrisGame {
     field Board board;
     field Piece currentPiece;
     field Piece nextPiece;
+    field Piece newPiece;
     field int currentX;
     field int currentY;
     field int nextx;
@@ -13,9 +14,13 @@ class TetrisGame {
     field int score;
     field boolean gameOn;
     field boolean paused;
-    field int timer;
     field int action;
     field boolean moved;
+    field boolean doClearRow;
+    
+    field int timeMoved;
+    field int timeTicked;
+    field boolean debug;
 
     static int TOP_SPACE;
     static int NUMBER_OF_PIECES;
@@ -24,6 +29,8 @@ class TetrisGame {
 	static int RIGHT;
 	static int DROP;
 	static int DOWN;
+    static int NONE;
+    static int MOVE_TIME;
 
     constructor TetrisGame new() {
         let NUMBER_OF_PIECES = 7;
@@ -32,12 +39,19 @@ class TetrisGame {
         let RIGHT = 2;
         let DROP = 3;
         let DOWN = 4;
+        let NONE = -1;
         let WIDTH = 20;
         let HEIGHT = 16;
-        let TOP_SPACE = 1;
+        let TOP_SPACE = 5;
+        let MOVE_TIME = 1000;
         let action = -1;
+        let doClearRow = false;
 
-        let board = Board.new(WIDTH, HEIGHT);
+        let timeMoved = 0;
+        let timeTicked = 0;
+        let debug = false;
+        
+        let board = Board.new(WIDTH, HEIGHT, TOP_SPACE);
         let pieces = Piece.getPieces();
         return this;
     }
@@ -50,46 +64,57 @@ class TetrisGame {
     method void start() {
         var int result;
         var int clear;
+        var int key;
         var boolean failed;
         let gameOn = true;
-        let timer = 1;
+        let moved = false;
+        do pickNextPiece();
         do addNewPiece();
-
+        do pickNextPiece();
         do Renderer.renderPanel();
+        
         while (gameOn) {
-            do tick();
-            let timer = timer + 1;
-
-            if (~(currentPiece = null)) { do board.undo(); }
-
-            do computeNextMove();
-            let result = setCurrent();
-
-            // do Output.printInt(currentX);
-            // do Output.printInt(currentY);
-            // do Output.printInt(result);
-            // do Output.printInt(timer);
-            // do Output.println();
+            let action = NONE;
+            let moved = false;
+            let key = Keyboard.keyPressed();
+            let timeTicked = timeTicked + 1;
+            let timeMoved = timeMoved + 1;
+            if (timeMoved = MOVE_TIME)        { do move(key); let timeMoved = 0; }
+            if (timeTicked = (MOVE_TIME * 6)) { let moved = false; let action = DOWN; let timeTicked = 0; }
             
-            if (result = Board.PLACE_ROW_FILLED()) {
-                do paintPiece(currentPiece, currentX, currentY, false);
-            }
-            let failed = false;
-            if (result > (Board.PLACE_OUT_BOUNDS() - 1)) {
-                let failed = true;
-            }
+            if (~(action = NONE)) { 
+                if (~(currentPiece = null)) { do board.undo(); }
+                do computeNextMove();
+                let result = setCurrent();
+            
+                if (result = Board.PLACE_ROW_FILLED()) {
+                    let doClearRow = ~doClearRow;
+                }
+                    
+                let failed = false;
+                if (result > (Board.PLACE_OUT_BOUNDS() - 1)) {
+                    let failed = true;
+                }
 
-            if (failed & (action = DOWN) & (~moved)) {
-                do paintPiece(currentPiece, currentX, currentY, true);
-                if (board.getMaxHeight() > (HEIGHT - TOP_SPACE)) { let gameOn = false; }
-                else { do addNewPiece(); }
-                let clear = board.clearRows();
-                let score = score + (clear * 10);
-                // do paint();
+                if (failed) {
+                    if (~(currentPiece = null)) { 
+                        do board.placePiece(currentPiece, currentX, currentY); 
+                        do paintPiece(currentPiece, currentX, currentY, true);
+                    }
+                }
+                
+                if (failed & (action = DOWN) & (~moved)) {
+                    if (doClearRow) {
+                        let clear = board.clearRows();
+                        let score = score + (clear * 10);
+                        do paint();
+                        let doClearRow = ~doClearRow;
+                    }
+                    if (board.getMaxHeight() > (HEIGHT - TOP_SPACE)) { let gameOn = false; }
+                    else { do addNewPiece(); do pickNextPiece(); }
+                }
             }
             
-            if (~failed & (~(action = DOWN))) { let moved = true; }
-            else { let moved = false; }
         }
         return;
     }
@@ -100,11 +125,13 @@ class TetrisGame {
         let nextPiece = currentPiece;
         if (action = ROTATE) {
             let nextPiece = currentPiece.rotate();
-            let nextx = nextx + (nextPiece.getWidth() - currentPiece.getWidth()) / 2;
-            let nexty = nexty + (nextPiece.getHeight() - currentPiece.getHeight()) / 2;
+
+            let nextx = nextx + ((currentPiece.getWidth() - nextPiece.getWidth()) / 2);
+            let nexty = nexty + ((currentPiece.getHeight() - nextPiece.getHeight()) / 2);
+
         }
         if (action = DROP) {
-            let nexty = board.dropHeight(currentPiece, currentX);
+            let nexty = board.dropHeight(currentPiece, nextx);
             if (nexty < currentY) {
                 let nexty = currentY;
             }
@@ -124,7 +151,7 @@ class TetrisGame {
     method int setCurrent() {
         var int result;
         let result = board.placePiece(nextPiece, nextx, nexty);
-        if (result < (Board.PLACE_OUT_BOUNDS() - 1)) {
+        if (result < Board.PLACE_OUT_BOUNDS()) {
             do paintPiece(currentPiece, currentX, currentY, false);
             let currentPiece = nextPiece;
             let currentX = nextx;
@@ -135,45 +162,47 @@ class TetrisGame {
         return result;
     }
 
-    method void tick() {
-        var int key;
-        let key = Keyboard.keyPressed();
-        if (key = 140) { let gameOn = false;   }   // esc key
-        if (key = 128) { 
-            if (paused){ let paused = true;     }
-            else       { let paused = false;    }
-        }                                           // enter key
-        if (key = 32)  { let action = DROP;  }   // space key
-        if (key = 131) { let action = ROTATE;}   // up arrow
-        if (key = 133) { let action = DOWN;  }   // down arrow
-        if (key = 130) { let action = LEFT;  }   // left arrow
-        if (key = 132) { let action = RIGHT; }   // right arrow
-
-        if (timer = 10) {
-            let timer = timer - 10;
-            let action = DOWN;
-        }
-        return;
-    }
-
-    method Piece pickNextPiece() {
-		var int pieceNum;
-		var Piece tempPiece;
-        let pieceNum = Random.randRange(NUMBER_OF_PIECES);
-        let tempPiece = pieces[pieceNum];
-		return(tempPiece);
-	}
-
     method void addNewPiece() {
         var int result;
         
         do board.commit();
-        let currentPiece = pickNextPiece();
+        let currentPiece = newPiece;
         let currentX = (Board.WIDTH() - currentPiece.getWidth()) / 2;
-        let currentY = (TOP_SPACE + 1);
-        
+        let currentY = TOP_SPACE - 4;
+        let result = board.placePiece(currentPiece, currentX, currentY);
+        do paintPiece(currentPiece, currentX, currentY, true);
         return;
     }
+
+    method void move(int key) {
+        
+        if (key = 140) { let gameOn = false;   }   // esc key
+        if (key = 128) { 
+            if (paused){ let paused = true;     }
+            else       { let paused = false;    }
+        }                                           // I don't know what key this is
+        if (key = 32)  { let moved = true; let action = DROP;  }   // SPACE key
+        if (key = 131) { let moved = true; let action = ROTATE;}   // up arrow
+        if (key = 133) { let moved = true; let action = DOWN;  }   // down arrow
+        if (key = 130) { let moved = true; let action = LEFT;  }   // left arrow
+        if (key = 132) { let moved = true; let action = RIGHT; }   // right arrow
+        return;
+    }
+
+    /**
+    * The numbers in this function are pretty hardcoded
+    *
+    */
+    method void pickNextPiece() {
+		var int pieceNum;
+        if (~(newPiece = null)) {
+            do paintPiece(newPiece, WIDTH + 2, (HEIGHT / 2) - 2, false);
+        }
+        let pieceNum = Random.randRange(NUMBER_OF_PIECES - 1);
+        let newPiece = pieces[pieceNum];
+        do paintPiece(newPiece, WIDTH + 2, (HEIGHT / 2) - 2, true);
+        return;
+	}
 
     method void paintPanel() {
         do Renderer.renderPanel();
@@ -203,20 +232,16 @@ class TetrisGame {
         var Array a;
         var boolean color;
         var int px, py;
-        var int i, row, col;
         let matrix = board.getBoard();
-        let i = 0;
-        let row = 0;
-        let col = 0;
-        while (row < Board.HEIGHT()) {
-            let col = 0;
-            let a = matrix.getRow(row);
-            while (col < Board.WIDTH()) {
-                let color = a[col];
-                do Renderer.renderBrick(col, row, color);
-                let col = col + 1;
+        while (py < Board.HEIGHT()) {
+            let px = 0;
+            let a = matrix.getRow(py);
+            while (px < Board.WIDTH()) {
+                let color = a[px];
+                do Renderer.renderBrick(px, py, color);
+                let px = px + 1;
             }
-            let row = row + 1;
+            let py = py + 1;
         }
         return;
     }

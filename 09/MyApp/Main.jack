@@ -1,24 +1,71 @@
 class Main {
     function void main() {
-        var Array pieces;
-        var Piece currentPiece;
-        var Array points;
-        var Point currentPoint;
-        let pieces = Piece.getPieces();
-        let currentPiece = pieces[0];
-        let points = currentPiece.getBody();
+        var Matrix board;
+        var Matrix savedBoard;
+        var Array heights;
+        var Array saved;
+        var Array arr;
+        var int i;
+        var int j;
+        let heights = Array.new(4);
+        let saved = Array.new(4);
+
+        let board = Matrix.new(4, 4);
+        let savedBoard = Matrix.new(4, 4);
+
+        let i = 0;
+        while (i < 4) {
+            let j = 0;
+            while (j < 4) {
+                do board.set(i, j, 1);
+                let j = j + 1;
+            }
+            let i = i + 1;
+        }
         
-        let currentPoint = points[0];
-        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
+        let savedBoard = board.saveMatrix();
 
-        let currentPoint = points[1];
-        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
+        let i = 0;
+        while (i < 4) {
+            let j = 0;
+            while (j < 4) {
+                do Output.printInt(savedBoard.get(i, j));
+                let j = j + 1;
+            }
+            do Output.println();
+            let i = i + 1;
+        }
 
-        let currentPoint = points[2];
-        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
 
-        let currentPoint = points[3];
-        do Renderer.renderBrick(currentPoint.getX(), currentPoint.getY());
+
+
+
+
+
+
+
+
+        // let i = 0;
+        // while (i < 4) {
+        //     let heights[i] = 1;
+        //     let i = i + 1;
+        // }
+
+        // let arr = heights;
+        // let heights = saved;
+        // let saved = arr;
+
+        // let i = 0;
+        // while (i < 4) {
+        //     do Output.printInt(heights[i]);
+        //     let i = i + 1;
+        // }
+
+        // let i = 0;
+        // while (i < 4) {
+        //     do Output.printInt(saved[i]);
+        //     let i = i + 1;
+        // }
 
         return;
     }
