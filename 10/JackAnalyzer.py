@@ -25,11 +25,12 @@ class Tokenizer:
         self.read_filename = jack_filename
         self.in_string_flag = False
         self.in_comment_flag = False
+        self.debug = 0
         
     def parse(self):
         with open(self.read_filename) as read_file:
             self.writeInitialize()
-
+            
             for line in read_file.readlines():
                 # empty line
                 if (self.isInvalidLine(line)):
@@ -53,7 +54,7 @@ class Tokenizer:
 
     def classifyToken(self, word):
         if (self.in_string_flag):
-            if (word[-1] == "\"" or word[-1] == ";"):
+            if ("\"" in word):
                 self.in_string_flag = False
                 return END_STRING_TOKEN
             return -1
@@ -66,7 +67,7 @@ class Tokenizer:
             wordInt = int(word)
             if ((wordInt >= 0) and (wordInt <= 32767)):
                 return INTEGER_TOKEN
-        elif (word[0] == "\""):
+        elif (word[0] == "\"" and len(word) > 1):
             self.in_string_flag = True
             return START_STRING_TOKEN
         elif (self.isIdentifier(word)):
@@ -74,14 +75,23 @@ class Tokenizer:
         return NESTED_WORD
 
     def handleString(self, token, token_type):
+        # "HOW MANY NUMBERS? ";
+        # Keyboard.readInt("HOW MANY NUMBERS? ");
         if (token_type == END_STRING_TOKEN):
-            if (token[-1] == ";"):
-                token = token[:-1]
-                token = token[:-1]
+            if (token[-1] != "\""):
+                i = 0
+                j = 0
+                while (i < len(token)):
+                    token_type = self.classifyToken(token[i])
+                    if (token[i] == "\""):
+                        self.writeEndString(token[j:i])
+                    if (token_type == SYMBOL_TOKEN):
+                        self.processToken(token_type, token[i])
+                    i += 1
+            else:
+                token = token.strip("\"")
                 self.writeEndString(token)
-                self.writeSymbol(";")
-            elif (token[-1] == "\""):
-                self.writeEndString(token[:-1])
+            
         else:
             self.writeString(token)
 
@@ -93,7 +103,7 @@ class Tokenizer:
         elif (token_type == INTEGER_TOKEN):
             self.writeInt(word)
         elif (token_type == START_STRING_TOKEN):
-            word = word[1:]
+            word = word.strip("\"")
             self.writeStartString(word)
         elif (token_type == IDENTIFIER_TOKEN):
             self.writeIdentifier(word)
@@ -103,11 +113,13 @@ class Tokenizer:
     def handleNestedWord(self, word):
         # (( "test machine" ));
         # screen.draw()
+        # Keyboard.readInt("HOW MANY NUMBERS? ");
         i = 0
         j = 0
         write_stripped_word = False
         stripped_word = None
-        for i in range(0, len(word)):
+
+        while (i < len(word)):
             token_type = self.classifyToken(word[i])
             if (token_type == SYMBOL_TOKEN):
                 if (write_stripped_word):
@@ -118,7 +130,8 @@ class Tokenizer:
             else:
                 stripped_word = word[j:i+1]
                 write_stripped_word = True
-        
+            i += 1
+
         if (write_stripped_word):
             self.parseWord(stripped_word)
 
@@ -182,7 +195,9 @@ class Tokenizer:
             return True
         words = line.split()
         word = words[0]
-        if (word == "/**"):
+        if (word[0] == "/" and word[1] == "/"):
+            return True
+        elif (word == "/**"):
             if (not("*/" in words)):
                 self.in_comment_flag = True
             return True
@@ -575,17 +590,8 @@ class CompilationEngine:
         line = self.getNextLine()
         token = self.getTokenFromLine(line)
         if (token in token_to_eat):
-            if (token == ">"):
-                self.write("<symbol> &gt; </symbol>")
-                return True
-            elif (token == "<"):
-                self.write("<symbol> &lt; </symbol>")
-                return True
-            elif (token == "\""):
+            if (token == "\""):
                 self.write("<symbol> &quot; </symbol>")
-                return True
-            elif (token == "&"):
-                self.write("<symbol> &amp; </symbol>")
                 return True
             else:
                 self.write(line)
@@ -645,20 +651,22 @@ class CompilationEngine:
 class Main:
     def __init__(self, argv):
         if len(argv) != 0 and os.path.isdir(argv[0]):
+            # Square
             self.translateDirectory(argv[0])
         elif len(argv) != 0 and os.path.splitext(argv[0])[1] == ".jack":
+            # Square\Main.jack
+            # Main.jack
             self.translateFile(argv[0])
         else:
-            print("Command: python JackAnalyzer.py <filename>.jack")
+            print("Command: python JackAnalyzer.py <directory name>.jack")
             sys.exit(1)
 
     def translateDirectory(self, directory):
         for jack_filename in glob.glob(directory + "/*.jack"):
             file_name = jack_filename.split('.')[0]
             xmlT_filename = file_name + "T.xml"
-            class_name = file_name.split("\\")[1]
+            class_name = file_name.split("/")[1]
             ALL_CLASSES.append(class_name)
-            
             with open(xmlT_filename, "w") as xmlT_file:
                 tokenizer = Tokenizer(xmlT_file, jack_filename)
                 tokenizer.parse()
@@ -672,12 +680,14 @@ class Main:
                 xml_file.close()
 
     def translateFile(self, file_name):
-        jack_filename = file_name + ".jack"
-        xmlT_filename = file_name + "T.xml"
-        xml_filename =  file_name + ".xml"
+        prefix_filename = file_name.split('.')[0]
+        jack_filename = prefix_filename + ".jack"
+        xmlT_filename = prefix_filename + "T.xml"
+        xml_filename =  prefix_filename + ".xml"
+        class_name = prefix_filename.split("\\")[1]
 
         with open(xmlT_filename, "w") as xmlT_file:
-            ALL_CLASSES.append(file_name)
+            ALL_CLASSES.append(class_name)
             tokenizer = Tokenizer(xmlT_file, jack_filename)
             tokenizer.parse()
         xmlT_file.close()
