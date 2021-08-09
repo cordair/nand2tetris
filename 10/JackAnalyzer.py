@@ -2,95 +2,90 @@ import os, re, sys, glob
 
 END_LINE = "\n"
 
-keyword = {
-    "class":        True,
-    "constructor":  True,
-    "function":     True,
-    "method":       True,
-    "field":        True,
-    "static":       True,
-    "var":          True,
-    "int":          True,
-    "char":         True,
-    "boolean":      True,
-    "void":         True,
-    "true":         True,
-    "false":        True,
-    "null":         True,
-    "this":         True,
-    "let":          True,
-    "do":           True,
-    "if":           True,
-    "else":         True,
-    "while":        True,
-    "return":       True,
-}
+keyword = ["class", "constructor", "function", "method", "field", "static", "var",          
+            "int", "char", "boolean", "void", "true", "false", "null", "this", "let",          
+            "do", "if", "else", "while", "return", ]
 
-symbol = {
-    "{": True,
-    "}": True,
-    "(": True,
-    ")": True,
-    "[": True,
-    "]": True,
-    ",": True,
-    ".": True,
-    ";": True,
-    "+": True,
-    "-": True,
-    "*": True,
-    "/": True,
-    "&": True,
-    "|": True,
-    "<": True,
-    ">": True,
-    "=": True,
-    "~": True,
-}
+symbol = {"{", "}", "(", ")", "[", "]", ",", ".", ";", "+", "-", "*", 
+          "/", "&", "|", "<", ">", "=", "~", }
 
 KEYWORD_TOKEN           = 0
 SYMBOL_TOKEN            = 1
-START_STRING_TOKEN      = 3
-END_STRING_TOKEN        = 4
-INTEGER_TOKEN           = 5
-IDENTIFIER_TOKEN        = 6
-NESTED_TOKEN            = 7
+START_STRING_TOKEN      = 2
+END_STRING_TOKEN        = 3
+INTEGER_TOKEN           = 4
+IDENTIFIER_TOKEN        = 5
+NESTED_WORD             = 6
 
-ALL_FILES = []
+ALL_CLASSES = []
 
 class Tokenizer:
     def __init__(self, xmlT_file, jack_filename):
         self.file = xmlT_file
         self.read_filename = jack_filename
+        self.in_string_flag = False
+        self.in_comment_flag = False
         
-
     def parse(self):
         with open(self.read_filename) as read_file:
             self.writeInitialize()
 
             for line in read_file.readlines():
                 # empty line
-                if (not line.strip()):
+                if (self.isInvalidLine(line)):
                     continue
-
-                is_string = False
                 words = line.split()
                 for word in words:
-                    if (self.isComment(word)):
+                    if (self.isNestedComment(word)):
                         break
-                    token_type = self.classifyToken(word)
-                    is_string = self.processToken(token_type, word, is_string)
+                    self.parseWord(word)
 
             self.writeEnd()
             read_file.close()
 
-    def processToken(self, token_type, word, is_string):
-        if (is_string):
-            if (token_type == END_STRING_TOKEN):
-                self.writeEndString(word)
-                is_string = False
-            return is_string
+    def parseWord(self, word):
+        if (self.in_string_flag):
+            token_type = self.classifyToken(word)
+            self.handleString(word, token_type)
+        else:
+            token_type = self.classifyToken(word)
+            self.processToken(token_type, word)
 
+    def classifyToken(self, word):
+        if (self.in_string_flag):
+            if (word[-1] == "\"" or word[-1] == ";"):
+                self.in_string_flag = False
+                return END_STRING_TOKEN
+            return -1
+
+        if (word in keyword):
+            return KEYWORD_TOKEN
+        elif (word in symbol):
+            return SYMBOL_TOKEN
+        elif (self.representInt(word)):
+            wordInt = int(word)
+            if ((wordInt >= 0) and (wordInt <= 32767)):
+                return INTEGER_TOKEN
+        elif (word[0] == "\""):
+            self.in_string_flag = True
+            return START_STRING_TOKEN
+        elif (self.isIdentifier(word)):
+            return IDENTIFIER_TOKEN
+        return NESTED_WORD
+
+    def handleString(self, token, token_type):
+        if (token_type == END_STRING_TOKEN):
+            if (token[-1] == ";"):
+                token = token[:-1]
+                token = token[:-1]
+                self.writeEndString(token)
+                self.writeSymbol(";")
+            elif (token[-1] == "\""):
+                self.writeEndString(token[:-1])
+        else:
+            self.writeString(token)
+
+    def processToken(self, token_type, word):
         if (token_type == KEYWORD_TOKEN):
             self.writeKeyword(word)
         elif (token_type == SYMBOL_TOKEN):
@@ -98,53 +93,34 @@ class Tokenizer:
         elif (token_type == INTEGER_TOKEN):
             self.writeInt(word)
         elif (token_type == START_STRING_TOKEN):
+            word = word[1:]
             self.writeStartString(word)
-            is_string = True
         elif (token_type == IDENTIFIER_TOKEN):
             self.writeIdentifier(word)
-        elif (token_type == NESTED_TOKEN):
-            i = 0
-            j = -1
-            
-            while (i < len(word)):
-                typei = self.classifyToken(word[i])
-                if (typei == SYMBOL_TOKEN):
-                    sub_string = word[j+1:i]
-                    typej = self.classifyToken(sub_string)
-                    if (typej != None):
-                        self.processToken(typej, sub_string, False)
-                    self.writeSymbol(word[i])
-                    j = i
-                i += 1
-            
-            sub_string = word[j+1:i]
-            typej = self.classifyToken(sub_string)
-            if (typej != None):
-                self.processToken(typej, sub_string, False)
+        elif (token_type == NESTED_WORD):
+            self.handleNestedWord(word)
 
-        return is_string
-
-    def classifyToken(self, word):
-        if (word == ""):
-            return None
-        elif (keyword.get(word, False)):
-            return KEYWORD_TOKEN
-        elif (symbol.get(word, False)):
-            return SYMBOL_TOKEN
-        elif (self.representInt(word)):
-            wordInt = int(word)
-            if ((wordInt >= 0) and (wordInt <= 32767)):
-                return INTEGER_TOKEN
+    def handleNestedWord(self, word):
+        # (( "test machine" ));
+        # screen.draw()
+        i = 0
+        j = 0
+        write_stripped_word = False
+        stripped_word = None
+        for i in range(0, len(word)):
+            token_type = self.classifyToken(word[i])
+            if (token_type == SYMBOL_TOKEN):
+                if (write_stripped_word):
+                    self.parseWord(stripped_word)
+                    write_stripped_word = False
+                self.processToken(token_type, word[i])
+                j = i + 1
             else:
-                print("Too big to be integer")
-        elif (word[0] == "\""):
-            return START_STRING_TOKEN
-        elif (word[-1] == "\""):
-            return END_STRING_TOKEN
-        elif (self.isIdentifier(word)):
-            return IDENTIFIER_TOKEN
-        else:
-            return NESTED_TOKEN
+                stripped_word = word[j:i+1]
+                write_stripped_word = True
+        
+        if (write_stripped_word):
+            self.parseWord(stripped_word)
 
     def writeInitialize(self):
         self.file.write("<tokens>")
@@ -158,16 +134,16 @@ class Tokenizer:
         self.file.write(END_LINE)
 
     def writeSymbol(self, value):
+        if (value == ">"):
+            value = "&gt;"
+        elif (value == "<"):
+            value = "&lt;"
+        elif (value == "&"):
+            value = "&amp;"
         self.file.write("<symbol> {value} </symbol>".format(value=value))
         self.file.write(END_LINE)
 
     def writeIdentifier(self, value):
-        if (value == ">"):
-            value = "&gt"
-        elif (value == "<"):
-            value = "&lt"
-        elif (value == "="):
-            value = "&eq"
         self.file.write("<identifier> {value} </identifier>".format(value=value))
         self.file.write(END_LINE)
     
@@ -177,11 +153,9 @@ class Tokenizer:
 
     def writeStartString(self, value):
         self.file.write("<stringConstant> {value}".format(value=value))
-        self.file.write(END_LINE)
 
     def writeString(self, value):
         self.file.write(" {value}".format(value=value))
-        self.file.write(END_LINE)
 
     def writeEndString(self, value):
         self.file.write(" {value} </stringConstant>".format(value=value))
@@ -202,8 +176,24 @@ class Tokenizer:
                 return False
         return True
 
-    def isComment(self, word):
-        if (word == "//" or word == "/**" or word == "*" or word == "*/"):
+    def isInvalidLine(self, line):
+        # empty line
+        if (not line.strip()):
+            return True
+        words = line.split()
+        word = words[0]
+        if (word == "/**"):
+            if (not("*/" in words)):
+                self.in_comment_flag = True
+            return True
+        elif (word == "*" and self.in_comment_flag):
+            return True
+        elif (word == "*/"):
+            self.in_comment_flag = False
+            return True
+
+    def isNestedComment(self, word):
+        if (word == "//" ):
             return True
         return False
 
@@ -215,12 +205,12 @@ class CompilationEngine:
         self.lines = None
         self.tabs = ""
 
-        self.class_names = ALL_FILES
+        self.class_names = ALL_CLASSES
         self.subroutine_names = []
         self.var_names = []
 
         self.class_var_dec = ["static", "field"]
-        self.type = ["int", "char", "boolean"]
+        self.type = ["int", "char", "boolean", "String", "Array"]
         self.var_dec = ["static", "field"]
         self.subroutine = ["constructor", "function", "method"]
         self.subroutine_dec = ["void"]
@@ -228,11 +218,12 @@ class CompilationEngine:
         self.statements = ["let", "if", "do", "while", "return"]
         self.expressions = ["integerConstant", "stringConstant", "keywordConstant", "expression", 
                             "identifier", "unaryOpTerm", "array", "sameClassCall", "diffClassCall"]
-        self.op = ["+", "-", "*", "/", "&", "|", "<", ">", "="]
+        self.op = ["+", "-", "*", "/", "&amp;", "|", "&lt;", "&gt;", "=", "\""]
         self.unaryOp = ["-", "~"]
         self.type.extend(self.class_names)
         self.var_dec.extend(self.class_names)
         self.subroutine_dec.extend(self.type)
+        self.subroutine_dec.extend(self.class_names)
 
 
     def compile(self):
@@ -258,70 +249,40 @@ class CompilationEngine:
         self.tabs = prev_tabs
         self.write("</class>")
 
-    def eat(self, token_to_eat):
-        line = self.getNextLine()
-        token = self.getTokenFromLine(line)
-        if (token in token_to_eat):
-            self.write(line)
-            return True
-        self.getPreviousLine()
-        return False
-    
-    def eatType(self, type):
-        line = self.getNextLine()
-        token_type = self.getTokenTypeFromLine(line)
-        if (token_type == type):
-            self.write(line)
-        else:
-            print("ERROR! Eat type error!", end='')
-            print("\t line: " + line + "\t type_to_eat: " + type)
-
-    def eatVariableName(self):
-        line = self.getNextLine()
-        token = self.getTokenFromLine(line)
-        self.var_names.append(token)
-        self.write(line)
-
-    def eatSubroutineName(self):
-        line = self.getNextLine()
-        token = self.getTokenFromLine(line)
-        self.write(line)
-        self.subroutine_names.append(token)
-
+ 
     def handleClassVarDec(self):
         while (True):
             line = self.lookCurrentLine()
             token = self.getTokenFromLine(line)
-            self.write("<classVarDec>")
             if (token in self.class_var_dec):
+                self.write("<classVarDec>")
                 prev_tabs = self.tabs
                 self.tabs += "  "
             
                 self.eat(self.var_dec)
                 self.eat(self.type)
-                self.eatVariableName()
+                self.eatType("identifier")
                 while(self.eat([","])):
-                    self.eatVariableName()
+                    self.eatType("identifier")
                 self.eat([";"])
 
                 self.tabs = prev_tabs
                 self.write("</classVarDec>")
             else:
-                self.write("</classVarDec>")
                 break
             
     def handleSubroutineDec(self):
         while(True):
             line = self.lookCurrentLine()
             token = self.getTokenFromLine(line)
-            self.write("<subroutineDec>")
             if (token in self.subroutine):
+                self.write("<subroutineDec>")
                 prev_tabs = self.tabs
                 self.tabs += "  "
 
                 self.eat(self.subroutine)
                 self.eat(self.subroutine_dec)
-                self.eatSubroutineName()
+                self.eatType("identifier")
                 self.eat("(")
                 self.handleParameterList()
                 self.eat(")")
@@ -330,23 +291,22 @@ class CompilationEngine:
                 self.tabs = prev_tabs
                 self.write("</subroutineDec>")
             else:
-                self.write("</subroutineDec>")
                 break
 
     def handleParameterList(self):
         line = self.lookCurrentLine()
         token = self.getTokenFromLine(line)
         prev_tabs = self.tabs
+        self.write("<parameterList>")
+        self.tabs += "  "
         if (token in self.type):
-            self.write("<parameterList>")
-            self.tabs += "  "
             self.eat(self.type)
             self.eatType("identifier")
             while (self.eat(",")):
                 self.eat(self.type)
                 self.eatType("identifier")
-            self.tabs = prev_tabs
-            self.write("</parameterList>")
+        self.tabs = prev_tabs
+        self.write("</parameterList>")
 
     def handleSubroutineBody(self):
         self.write("<subroutineBody>")
@@ -363,12 +323,12 @@ class CompilationEngine:
         while(True):
             line = self.lookCurrentLine()
             token = self.getTokenFromLine(line)
-            self.write("<varDec>")
             if (token == "var"):
+                self.write("<varDec>")
                 prev_tabs = self.tabs
                 self.tabs += "  "
 
-                self.eat("var")
+                self.eatType("keyword")
                 self.eat(self.type)
                 self.eatType("identifier")
                 while (self.eat(",")):
@@ -377,13 +337,12 @@ class CompilationEngine:
                 self.tabs = prev_tabs
                 self.write("</varDec>")
             else:
-                self.write("</varDec>")
                 break
 
     def compileStatements(self):
         prev_tabs = self.tabs
-        self.tabs += "  "
         self.write("<statements>")
+        self.tabs += "  "
         while(True):
             line = self.lookCurrentLine()
             token = self.getTokenFromLine(line)
@@ -400,7 +359,6 @@ class CompilationEngine:
                     self.handleReturn()
             else:
                 break
-
         self.tabs = prev_tabs
         self.write("</statements>")
 
@@ -464,16 +422,14 @@ class CompilationEngine:
         self.tabs += "  "
 
         self.eat(["do"])
-        self.eat
         line = self.lookForwardOneLine()
         token = self.getTokenFromLine(line)
 
-        subroutine = ""
         if (token == "("):
-            subroutine = "sameClassCall"
+            self.handleSpecificTerm("sameClassCall")
         elif (token == "."):
-            subroutine = "diffClassCall"
-        self.handleSpecificTerm(subroutine)
+            self.handleSpecificTerm("diffClassCall")
+        
         self.eat([";"])
 
         self.tabs = prev_tabs
@@ -504,52 +460,27 @@ class CompilationEngine:
         self.write("</expressionList>")
         
     def handleExpression(self):
-        self.handleTerm()
-        while (self.eat(self.op)):
-            self.handleTerm()
-        
-    def handleTerm(self):
-        line = self.lookCurrentLine()
-        token_type = self.getTokenTypeFromLine(line)
-        term_type = None
-
-        if (token_type == "integerConstant"):
-            term_type = "integerConstant"
-        elif (token_type == "stringConstant"):
-            term_type = "stringConstant"
-        elif (token_type == "keyword"):
-            term_type = "keywordConstant"
-        elif (token_type == "identifier"):
-            term_type = "identifier"
-        elif (token_type in self.unaryOp):
-            term_type = "unaryOpTerm"
-        elif (token_type == "("):
-            term_type = "expression"
-        else:
-            line = self.lookForwardOneLine()
-            token = self.getTokenFromLine(line)
-            if (token == "["):
-                term_type = "array"
-            elif (token == "("):
-                term_type = "sameClassCall"
-            elif (token == "."):
-                term_type = "diffClassCall"
-
+        term_type = self.findTermType()
         if (term_type in self.expressions):
             self.write("<expression>")
             prev_tabs = self.tabs
             self.tabs += "  "
-            
-            if (term_type != None):
-                self.write("<term>")
-                prev_tabs_2 = self.tabs
-                self.tabs += "  "
-                self.handleSpecificTerm(term_type)
-                self.tabs = prev_tabs_2
-                self.write("</term>")
+
+            self.handleTerm(term_type)
+            while (self.eatOperator(self.op)):
+                term_type = self.findTermType()
+                self.handleTerm(term_type)
 
             self.tabs = prev_tabs
             self.write("</expression>")
+        
+    def handleTerm(self, term_type):
+        self.write("<term>")
+        prev_tabs = self.tabs
+        self.tabs += "  "
+        self.handleSpecificTerm(term_type)
+        self.tabs = prev_tabs
+        self.write("</term>")
         
     def handleSpecificTerm(self, term_type):
         if (term_type == "integerConstant"):
@@ -571,7 +502,8 @@ class CompilationEngine:
             self.eat("]")
         elif (term_type == "unaryOpTerm"):
             self.eat(self.unaryOp)
-            self.handleTerm()
+            term_type = self.findTermType()
+            self.handleTerm(term_type)
         elif (term_type == "expression"):
             self.eat("(")
             self.handleExpression()
@@ -588,6 +520,78 @@ class CompilationEngine:
             self.eat("(")
             self.compileExpressionList()
             self.eat(")")
+
+    def findTermType(self):
+        line = self.lookCurrentLine()
+        token_type = self.getTokenTypeFromLine(line)
+        term_type = None
+
+        if (token_type == "integerConstant"):
+            term_type = "integerConstant"
+        elif (token_type == "stringConstant"):
+            term_type = "stringConstant"
+        elif (token_type == "identifier"):
+            line = self.lookForwardOneLine()
+            token = self.getTokenFromLine(line)
+            if (token == "["):
+                term_type = "array"
+            elif (token == "("):
+                term_type = "sameClassCall"
+            elif (token == "."):
+                term_type = "diffClassCall"
+            else: 
+                term_type = "identifier"
+        else:
+            token = self.getTokenFromLine(line)
+            if (token in self.keyword_constant):
+                term_type = "keywordConstant"
+            elif (token in self.unaryOp):
+                term_type = "unaryOpTerm"
+            elif (token == "("):
+                term_type = "expression"
+            else:
+                term_type = None
+        return term_type
+
+    def eat(self, token_to_eat):
+        line = self.getNextLine()
+        token = self.getTokenFromLine(line)
+        if (token in token_to_eat):
+            self.write(line)
+            return True
+        self.getPreviousLine()
+        return False
+    
+    def eatType(self, type):
+        line = self.getNextLine()
+        token_type = self.getTokenTypeFromLine(line)
+        if (token_type == type):
+            self.write(line)
+        else:
+            print("ERROR! Eat type error!", end='')
+            print("\t line: " + line + "\t type_to_eat: " + type)
+
+    def eatOperator(self, token_to_eat):
+        line = self.getNextLine()
+        token = self.getTokenFromLine(line)
+        if (token in token_to_eat):
+            if (token == ">"):
+                self.write("<symbol> &gt; </symbol>")
+                return True
+            elif (token == "<"):
+                self.write("<symbol> &lt; </symbol>")
+                return True
+            elif (token == "\""):
+                self.write("<symbol> &quot; </symbol>")
+                return True
+            elif (token == "&"):
+                self.write("<symbol> &amp; </symbol>")
+                return True
+            else:
+                self.write(line)
+                return True
+        self.getPreviousLine()
+        return False
 
     def getNextLine(self):
         next_line = self.lines[self.current_line]
@@ -606,7 +610,8 @@ class CompilationEngine:
         return token_type[1:-1]
 
     def lookCurrentLine(self):
-        return self.lines[self.current_line]
+        current_line = self.lines[self.current_line]
+        return current_line.strip()
 
     def lookForwardOneLine(self):
         self.current_line += 1
@@ -632,7 +637,8 @@ class CompilationEngine:
             print("ERROR! MISSING OPENING TOKEN")
 
     def verifyEndingToken(self):
-        if (self.getNextLine() != "</tokens>"):
+        if (self.lookCurrentLine() != "</tokens>"):
+            print(self.lookCurrentLine())
             print("ERROR! MISSING ENDING TOKEN")
 
 
@@ -649,10 +655,10 @@ class Main:
     def translateDirectory(self, directory):
         for jack_filename in glob.glob(directory + "/*.jack"):
             file_name = jack_filename.split('.')[0]
-            file_name = file_name.split("\\")[1]
-            ALL_FILES.append(file_name)
-
             xmlT_filename = file_name + "T.xml"
+            class_name = file_name.split("\\")[1]
+            ALL_CLASSES.append(class_name)
+            
             with open(xmlT_filename, "w") as xmlT_file:
                 tokenizer = Tokenizer(xmlT_file, jack_filename)
                 tokenizer.parse()
@@ -671,7 +677,7 @@ class Main:
         xml_filename =  file_name + ".xml"
 
         with open(xmlT_filename, "w") as xmlT_file:
-            ALL_FILES.append(file_name)
+            ALL_CLASSES.append(file_name)
             tokenizer = Tokenizer(xmlT_file, jack_filename)
             tokenizer.parse()
         xmlT_file.close()
