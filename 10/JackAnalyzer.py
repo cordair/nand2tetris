@@ -665,7 +665,7 @@ class Main:
         for jack_filename in glob.glob(directory + "/*.jack"):
             file_name = jack_filename.split('.')[0]
             xmlT_filename = file_name + "T.xml"
-            class_name = file_name.split("/")[1]
+            class_name = file_name.split("\\")[1]
             ALL_CLASSES.append(class_name)
             with open(xmlT_filename, "w") as xmlT_file:
                 tokenizer = Tokenizer(xmlT_file, jack_filename)
