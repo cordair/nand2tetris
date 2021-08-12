@@ -245,6 +245,7 @@ class CompilationEngine:
         with open(self.read_filename) as read_file:
             self.lines = read_file.readlines()
             self.verifyOpeningToken()
+            self.getNextLine()
             self.compileClass()
             self.verifyEndingToken()
             read_file.close()
@@ -254,12 +255,12 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
         
-        self.eat(["class"])
+        self.eat("class")
         self.eat(self.class_names)
-        self.eat(["{"])
+        self.eat("{")
         self.handleClassVarDec()
         self.handleSubroutineDec()
-        self.eat(["}"])
+        self.eat("}")
         
         self.tabs = prev_tabs
         self.write("</class>")
@@ -382,14 +383,14 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
 
-        self.eat(['let'])
+        self.eat('let')
         self.eatType("identifier")
-        if (self.eat(['['])):
+        if (self.eat('[')):
             self.handleExpression()
-            self.eat([']'])
-        self.eat(['='])
+            self.eat(']')
+        self.eat('=')
         self.handleExpression()
-        self.eat([';'])
+        self.eat(';')
 
         self.tabs = prev_tabs
         self.write("</letStatement>")
@@ -399,18 +400,18 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
 
-        self.eat(["if"])
-        self.eat(["("])
+        self.eat("if")
+        self.eat("(")
         self.handleExpression()
-        self.eat([")"])
-        self.eat(["{"])
+        self.eat(")")
+        self.eat("{")
         self.compileStatements()
-        self.eat(["}"])
+        self.eat("}")
         
-        while (self.eat(["else"])):
-            self.eat(["{"])
+        while (self.eat("else")):
+            self.eat("{")
             self.compileStatements()
-            self.eat(["}"])
+            self.eat("}")
 
         self.tabs = prev_tabs
         self.write("</ifStatement>")
@@ -420,13 +421,13 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
 
-        self.eat(["while"])
-        self.eat(["("])
+        self.eat("while")
+        self.eat("(")
         self.handleExpression()
-        self.eat([")"])
-        self.eat(["{"])
+        self.eat(")")
+        self.eat("{")
         self.compileStatements()
-        self.eat(["}"])
+        self.eat("}")
         
         self.tabs = prev_tabs
         self.write("</whileStatement>")
@@ -436,16 +437,19 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
 
-        self.eat(["do"])
-        line = self.lookForwardOneLine()
+        self.eat("do")
+        self.eatType("identifier")
+        line = self.lookCurrentLine()
         token = self.getTokenFromLine(line)
 
-        if (token == "("):
-            self.handleSpecificTerm("sameClassCall")
-        elif (token == "."):
-            self.handleSpecificTerm("diffClassCall")
+        if (token == "."):
+            self.eat(".")
+            self.eatType("identifier")
         
-        self.eat([";"])
+        self.eat("(")
+        self.compileExpressionList()
+        self.eat(")")
+        self.eat(";")
 
         self.tabs = prev_tabs
         self.write("</doStatement>")
@@ -455,9 +459,12 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
 
-        self.eat(["return"])
-        self.handleExpression()
-        self.eat([";"])
+        self.eat("return")
+        line = self.lookCurrentLine()
+        token = self.getTokenFromLine(line)
+        if (token != ";"):
+            self.handleExpression()
+        self.eat(";")
 
         self.tabs = prev_tabs
         self.write("</returnStatement>")
@@ -467,146 +474,104 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
 
-        self.handleExpression()
-        while (self.eat([","])):
+        line = self.lookCurrentLine()
+        token = self.getTokenFromLine(line)
+        if (token != ")"):
             self.handleExpression()
-
+            while (self.eat(",")):
+                self.handleExpression()
         self.tabs = prev_tabs
         self.write("</expressionList>")
         
     def handleExpression(self):
-        term_type = self.findTermType()
-        if (term_type in self.expressions):
-            self.write("<expression>")
-            prev_tabs = self.tabs
-            self.tabs += "  "
+        self.write("<expression>")
+        prev_tabs = self.tabs
+        self.tabs += "  "
+    
+        self.handleTerm()
+        while (self.eatOperator(self.op)):
+            self.handleTerm()
 
-            self.handleTerm(term_type)
-            while (self.eatOperator(self.op)):
-                term_type = self.findTermType()
-                self.handleTerm(term_type)
-
-            self.tabs = prev_tabs
-            self.write("</expression>")
+        self.tabs = prev_tabs
+        self.write("</expression>")
         
-    def handleTerm(self, term_type):
+    def handleTerm(self):
         self.write("<term>")
         prev_tabs = self.tabs
         self.tabs += "  "
-        self.handleSpecificTerm(term_type)
-        self.tabs = prev_tabs
-        self.write("</term>")
-        
-    def handleSpecificTerm(self, term_type):
-        if (term_type == "integerConstant"):
-            self.eatType("integerConstant")
-        elif (term_type == "stringConstant"):
-            self.eatType("stringConstant")
-        elif (term_type == "keywordConstant"):
-            self.eatType("keyword")
-        elif (term_type == "identifier"):
-            self.eatType("identifier")
-        elif (term_type == "expression"):
-            self.eat("(")
-            self.handleExpression()
-            self.eat(")")
-        elif (term_type == "array"):
-            self.eatType("identifier")
-            self.eat("[")
-            self.handleExpression()
-            self.eat("]")
-        elif (term_type == "unaryOpTerm"):
-            self.eat(self.unaryOp)
-            term_type = self.findTermType()
-            self.handleTerm(term_type)
-        elif (term_type == "expression"):
-            self.eat("(")
-            self.handleExpression()
-            self.eat(")")
-        elif (term_type == "sameClassCall"):
-            self.eatType("identifier")
-            self.eat("(")
-            self.compileExpressionList()
-            self.eat(")")
-        elif (term_type == "diffClassCall"):
-            self.eatType("identifier")
-            self.eat(".")
-            self.eatType("identifier")
-            self.eat("(")
-            self.compileExpressionList()
-            self.eat(")")
-
-    def findTermType(self):
         line = self.lookCurrentLine()
         token_type = self.getTokenTypeFromLine(line)
-        term_type = None
 
         if (token_type == "integerConstant"):
-            term_type = "integerConstant"
+            self.eatType("integerConstant")
         elif (token_type == "stringConstant"):
-            term_type = "stringConstant"
+            self.eatType("stringConstant")
         elif (token_type == "identifier"):
-            line = self.lookForwardOneLine()
+            self.eatType("identifier")
+            line = self.lookCurrentLine()
             token = self.getTokenFromLine(line)
             if (token == "["):
-                term_type = "array"
+                self.eat("[")
+                self.handleExpression()
+                self.eat("]")
             elif (token == "("):
-                term_type = "sameClassCall"
+                self.eat("(")
+                self.compileExpressionList()
+                self.eat(")")
             elif (token == "."):
-                term_type = "diffClassCall"
-            else: 
-                term_type = "identifier"
+                self.eat(".")
+                self.eatType("identifier")
+                self.eat("(")
+                self.compileExpressionList()
+                self.eat(")")
         else:
             token = self.getTokenFromLine(line)
             if (token in self.keyword_constant):
-                term_type = "keywordConstant"
+                self.eatType("keyword")
             elif (token in self.unaryOp):
-                term_type = "unaryOpTerm"
+                self.eat(self.unaryOp)
+                self.handleTerm()
             elif (token == "("):
-                term_type = "expression"
-            else:
-                term_type = None
-        return term_type
+                self.eat("(")
+                self.handleExpression()
+                self.eat(")")
+        self.tabs = prev_tabs
+        self.write("</term>")
 
     def eat(self, token_to_eat):
-        line = self.getNextLine()
+        line = self.lookCurrentLine()
         token = self.getTokenFromLine(line)
         if (token in token_to_eat):
             self.write(line)
+            self.getNextLine()
             return True
-        self.getPreviousLine()
         return False
     
     def eatType(self, type):
-        line = self.getNextLine()
+        line = self.lookCurrentLine()
         token_type = self.getTokenTypeFromLine(line)
         if (token_type == type):
+            self.getNextLine()
             self.write(line)
         else:
             print("ERROR! Eat type error!", end='')
             print("\t line: " + line + "\t type_to_eat: " + type)
 
     def eatOperator(self, token_to_eat):
-        line = self.getNextLine()
+        line = self.lookCurrentLine()
         token = self.getTokenFromLine(line)
         if (token in token_to_eat):
+            self.getNextLine()
             if (token == "\""):
                 self.write("<symbol> &quot; </symbol>")
                 return True
             else:
                 self.write(line)
                 return True
-        self.getPreviousLine()
         return False
 
     def getNextLine(self):
-        next_line = self.lines[self.current_line]
         self.current_line += 1
-        return next_line.strip()
-
-    def getPreviousLine(self):
-        self.current_line -= 1
-        return self.lines[self.current_line] 
 
     def getTokenFromLine(self, line):
         return line.split(" ")[1]
@@ -619,18 +584,6 @@ class CompilationEngine:
         current_line = self.lines[self.current_line]
         return current_line.strip()
 
-    def lookForwardOneLine(self):
-        self.current_line += 1
-        next_line = self.lines[self.current_line]
-        self.current_line -= 1
-        return next_line
-    
-    def lookForwardTwoLine(self):
-        self.current_line += 2
-        next_line = self.lines[self.current_line]
-        self.current_line -= 2
-        return next_line
-
     def write(self, line):
         self.file.write(self.tabs)
         self.file.write(line + END_LINE)
@@ -639,7 +592,8 @@ class CompilationEngine:
         self.file.close()
 
     def verifyOpeningToken(self):
-        if (self.getNextLine() != "<tokens>"):
+        line = self.lookCurrentLine()
+        if (line != "<tokens>"):
             print("ERROR! MISSING OPENING TOKEN")
 
     def verifyEndingToken(self):
