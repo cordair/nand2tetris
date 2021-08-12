@@ -20,17 +20,21 @@ NESTED_WORD             = 6
 ALL_CLASSES = []
 
 class Tokenizer:
-    def __init__(self, xmlT_file, jack_filename):
-        self.file = xmlT_file
+    def __init__(self, jack_filename):
         self.read_filename = jack_filename
+        
+        self.tokens = []
+        self.token_index = 0
+        self.number_of_token = 0
+        
+        self.current_string = None
         self.in_string_flag = False
         self.in_comment_flag = False
-        self.debug = 0
         
     def parse(self):
         with open(self.read_filename) as read_file:
             self.writeInitialize()
-            
+
             for line in read_file.readlines():
                 # empty line
                 if (self.isInvalidLine(line)):
@@ -40,9 +44,16 @@ class Tokenizer:
                     if (self.isNestedComment(word)):
                         break
                     self.parseWord(word)
-
             self.writeEnd()
+            self.number_of_token = len(self.tokens)
             read_file.close()
+
+    def advance(self):
+        if (self.token_index == self.number_of_token):
+            return None
+        token = self.tokens[self.token_index]
+        self.token_index += 1
+        return token
 
     def parseWord(self, word):
         if (self.in_string_flag):
@@ -136,15 +147,13 @@ class Tokenizer:
             self.parseWord(stripped_word)
 
     def writeInitialize(self):
-        self.file.write("<tokens>")
-        self.file.write(END_LINE)
+        self.tokens.append("<tokens>")
 
     def writeEnd(self):
-        self.file.write("</tokens>")
+        self.tokens.append("</tokens>")
 
     def writeKeyword(self, value):
-        self.file.write("<keyword> {value} </keyword>".format(value=value))
-        self.file.write(END_LINE)
+        self.tokens.append("<keyword> {value} </keyword>".format(value=value))
 
     def writeSymbol(self, value):
         if (value == ">"):
@@ -153,26 +162,23 @@ class Tokenizer:
             value = "&lt;"
         elif (value == "&"):
             value = "&amp;"
-        self.file.write("<symbol> {value} </symbol>".format(value=value))
-        self.file.write(END_LINE)
+        self.tokens.append("<symbol> {value} </symbol>".format(value=value))
 
     def writeIdentifier(self, value):
-        self.file.write("<identifier> {value} </identifier>".format(value=value))
-        self.file.write(END_LINE)
+        self.tokens.append("<identifier> {value} </identifier>".format(value=value))
     
     def writeInt(self, value):
-        self.file.write("<integerConstant> {value} </integerConstant>".format(value=value))
-        self.file.write(END_LINE)
+        self.tokens.append("<integerConstant> {value} </integerConstant>".format(value=value))
 
     def writeStartString(self, value):
-        self.file.write("<stringConstant> {value}".format(value=value))
+        self.current_string = "<stringConstant> {value}".format(value=value)
 
     def writeString(self, value):
-        self.file.write(" {value}".format(value=value))
+        self.current_string += " {value}".format(value=value)
 
     def writeEndString(self, value):
-        self.file.write(" {value} </stringConstant>".format(value=value))
-        self.file.write(END_LINE)
+        self.current_string += " {value} </stringConstant>".format(value=value)
+        self.tokens.append(self.current_string)
 
     def representInt(self, s):
         try: 
@@ -213,11 +219,12 @@ class Tokenizer:
         return False
 
 class CompilationEngine:
-    def __init__(self, xml_file, xmlT_filename):
+    def __init__(self, xml_file, tokenizer):
         self.file = xml_file
-        self.read_filename = xmlT_filename
-        self.current_line = 0
-        self.lines = None
+        self.tokenizer = tokenizer
+        self.current_line = None
+        self.current_token = None
+        self.current_token_type = None
         self.tabs = ""
 
         self.class_names = ALL_CLASSES
@@ -242,13 +249,11 @@ class CompilationEngine:
 
 
     def compile(self):
-        with open(self.read_filename) as read_file:
-            self.lines = read_file.readlines()
-            self.verifyOpeningToken()
-            self.getNextLine()
-            self.compileClass()
-            self.verifyEndingToken()
-            read_file.close()
+        self.getNextLine()
+        self.verifyOpeningToken()
+        self.getNextLine()
+        self.compileClass()
+        self.verifyEndingToken()
 
     def compileClass(self):
         self.write("<class>")
@@ -268,9 +273,7 @@ class CompilationEngine:
  
     def handleClassVarDec(self):
         while (True):
-            line = self.lookCurrentLine()
-            token = self.getTokenFromLine(line)
-            if (token in self.class_var_dec):
+            if (self.current_token in self.class_var_dec):
                 self.write("<classVarDec>")
                 prev_tabs = self.tabs
                 self.tabs += "  "
@@ -289,9 +292,7 @@ class CompilationEngine:
             
     def handleSubroutineDec(self):
         while(True):
-            line = self.lookCurrentLine()
-            token = self.getTokenFromLine(line)
-            if (token in self.subroutine):
+            if (self.current_token in self.subroutine):
                 self.write("<subroutineDec>")
                 prev_tabs = self.tabs
                 self.tabs += "  "
@@ -310,12 +311,10 @@ class CompilationEngine:
                 break
 
     def handleParameterList(self):
-        line = self.lookCurrentLine()
-        token = self.getTokenFromLine(line)
         prev_tabs = self.tabs
         self.write("<parameterList>")
         self.tabs += "  "
-        if (token in self.type):
+        if (self.current_token in self.type):
             self.eat(self.type)
             self.eatType("identifier")
             while (self.eat(",")):
@@ -337,9 +336,7 @@ class CompilationEngine:
 
     def handleVarDec(self):
         while(True):
-            line = self.lookCurrentLine()
-            token = self.getTokenFromLine(line)
-            if (token == "var"):
+            if (self.current_token == "var"):
                 self.write("<varDec>")
                 prev_tabs = self.tabs
                 self.tabs += "  "
@@ -360,18 +357,16 @@ class CompilationEngine:
         self.write("<statements>")
         self.tabs += "  "
         while(True):
-            line = self.lookCurrentLine()
-            token = self.getTokenFromLine(line)
-            if (token in self.statements):
-                if (token == "let"):
+            if (self.current_token in self.statements):
+                if (self.current_token == "let"):
                     self.handleLet()
-                elif (token == "if"):
+                elif (self.current_token == "if"):
                     self.handleIf()
-                elif (token == "do"):
+                elif (self.current_token == "do"):
                     self.handleDo()
-                elif (token == "while"):
+                elif (self.current_token == "while"):
                     self.handleWhile()
-                elif (token == "return"):
+                elif (self.current_token == "return"):
                     self.handleReturn()
             else:
                 break
@@ -439,10 +434,8 @@ class CompilationEngine:
 
         self.eat("do")
         self.eatType("identifier")
-        line = self.lookCurrentLine()
-        token = self.getTokenFromLine(line)
 
-        if (token == "."):
+        if (self.current_token == "."):
             self.eat(".")
             self.eatType("identifier")
         
@@ -460,9 +453,7 @@ class CompilationEngine:
         self.tabs += "  "
 
         self.eat("return")
-        line = self.lookCurrentLine()
-        token = self.getTokenFromLine(line)
-        if (token != ";"):
+        if (self.current_token != ";"):
             self.handleExpression()
         self.eat(";")
 
@@ -474,9 +465,7 @@ class CompilationEngine:
         prev_tabs = self.tabs
         self.tabs += "  "
 
-        line = self.lookCurrentLine()
-        token = self.getTokenFromLine(line)
-        if (token != ")"):
+        if (self.current_token != ")"):
             self.handleExpression()
             while (self.eat(",")):
                 self.handleExpression()
@@ -499,39 +488,34 @@ class CompilationEngine:
         self.write("<term>")
         prev_tabs = self.tabs
         self.tabs += "  "
-        line = self.lookCurrentLine()
-        token_type = self.getTokenTypeFromLine(line)
 
-        if (token_type == "integerConstant"):
+        if (self.current_token_type == "integerConstant"):
             self.eatType("integerConstant")
-        elif (token_type == "stringConstant"):
+        elif (self.current_token_type == "stringConstant"):
             self.eatType("stringConstant")
-        elif (token_type == "identifier"):
+        elif (self.current_token_type == "identifier"):
             self.eatType("identifier")
-            line = self.lookCurrentLine()
-            token = self.getTokenFromLine(line)
-            if (token == "["):
+            if (self.current_token == "["):
                 self.eat("[")
                 self.handleExpression()
                 self.eat("]")
-            elif (token == "("):
+            elif (self.current_token == "("):
                 self.eat("(")
                 self.compileExpressionList()
                 self.eat(")")
-            elif (token == "."):
+            elif (self.current_token == "."):
                 self.eat(".")
                 self.eatType("identifier")
                 self.eat("(")
                 self.compileExpressionList()
                 self.eat(")")
         else:
-            token = self.getTokenFromLine(line)
-            if (token in self.keyword_constant):
+            if (self.current_token in self.keyword_constant):
                 self.eatType("keyword")
-            elif (token in self.unaryOp):
+            elif (self.current_token in self.unaryOp):
                 self.eat(self.unaryOp)
                 self.handleTerm()
-            elif (token == "("):
+            elif (self.current_token == "("):
                 self.eat("(")
                 self.handleExpression()
                 self.eat(")")
@@ -539,50 +523,39 @@ class CompilationEngine:
         self.write("</term>")
 
     def eat(self, token_to_eat):
-        line = self.lookCurrentLine()
-        token = self.getTokenFromLine(line)
-        if (token in token_to_eat):
-            self.write(line)
+        if (self.current_token in token_to_eat):
+            self.write(self.current_line)
             self.getNextLine()
             return True
         return False
     
     def eatType(self, type):
-        line = self.lookCurrentLine()
-        token_type = self.getTokenTypeFromLine(line)
-        if (token_type == type):
+        if (self.current_token_type == type):
+            self.write(self.current_line)
             self.getNextLine()
-            self.write(line)
         else:
             print("ERROR! Eat type error!", end='')
-            print("\t line: " + line + "\t type_to_eat: " + type)
+            print("\t line: " + self.current_line + "\t type_to_eat: " + type)
+        
 
     def eatOperator(self, token_to_eat):
-        line = self.lookCurrentLine()
-        token = self.getTokenFromLine(line)
-        if (token in token_to_eat):
-            self.getNextLine()
-            if (token == "\""):
+        if (self.current_token in token_to_eat):
+            if (self.current_token == "\""):
                 self.write("<symbol> &quot; </symbol>")
-                return True
             else:
-                self.write(line)
-                return True
+                self.write(self.current_line)
+            self.getNextLine()
+            return True
         return False
 
     def getNextLine(self):
-        self.current_line += 1
+        line = self.tokenizer.advance()
+        self.current_line = line
 
-    def getTokenFromLine(self, line):
-        return line.split(" ")[1]
-
-    def getTokenTypeFromLine(self, line):
-        token_type = line.split(" ")[0]
-        return token_type[1:-1]
-
-    def lookCurrentLine(self):
-        current_line = self.lines[self.current_line]
-        return current_line.strip()
+        if (line != "<tokens>" and line != "</tokens>"):
+            token_type = line.split(" ")[0]
+            self.current_token = line.split(" ")[1]
+            self.current_token_type = token_type[1:-1]
 
     def write(self, line):
         self.file.write(self.tabs)
@@ -592,13 +565,13 @@ class CompilationEngine:
         self.file.close()
 
     def verifyOpeningToken(self):
-        line = self.lookCurrentLine()
-        if (line != "<tokens>"):
+        if (self.current_line != "<tokens>"):
+            print(self.current_line)
             print("ERROR! MISSING OPENING TOKEN")
 
     def verifyEndingToken(self):
-        if (self.lookCurrentLine() != "</tokens>"):
-            print(self.lookCurrentLine())
+        if (self.current_line != "</tokens>"):
+            print(self.current_line)
             print("ERROR! MISSING ENDING TOKEN")
 
 
@@ -618,38 +591,32 @@ class Main:
     def translateDirectory(self, directory):
         for jack_filename in glob.glob(directory + "/*.jack"):
             file_name = jack_filename.split('.')[0]
-            xmlT_filename = file_name + "T.xml"
             class_name = file_name.split("\\")[1]
             ALL_CLASSES.append(class_name)
-            with open(xmlT_filename, "w") as xmlT_file:
-                tokenizer = Tokenizer(xmlT_file, jack_filename)
-                tokenizer.parse()
-                xmlT_file.close()
         
-        for xmlT_filename in glob.glob(directory + "/*T.xml"):
-            xml_filename = xmlT_filename.split('.')[0][:-1] + ".xml"
+        for jack_filename in glob.glob(directory + "/*.jack"):
+            xml_filename = jack_filename.split('.')[0] + ".xml"
             with open(xml_filename, "w") as xml_file:
-                compilationEngine = CompilationEngine(xml_file, xmlT_filename)
+                tokenizer = Tokenizer(jack_filename)
+                tokenizer.parse()
+
+                compilationEngine = CompilationEngine(xml_file, tokenizer)
                 compilationEngine.compile()
                 xml_file.close()
 
     def translateFile(self, file_name):
         prefix_filename = file_name.split('.')[0]
         jack_filename = prefix_filename + ".jack"
-        xmlT_filename = prefix_filename + "T.xml"
         xml_filename =  prefix_filename + ".xml"
         class_name = prefix_filename.split("\\")[1]
-
-        with open(xmlT_filename, "w") as xmlT_file:
-            ALL_CLASSES.append(class_name)
-            tokenizer = Tokenizer(xmlT_file, jack_filename)
-            tokenizer.parse()
-        xmlT_file.close()
+        ALL_CLASSES.append(class_name)
 
         with open(xml_filename, "w") as xml_file:
-            compilationEngine = CompilationEngine(xml_file, xmlT_filename)
+            tokenizer = Tokenizer(jack_filename)
+            tokenizer.parse()
+            compilationEngine = CompilationEngine(xml_file, tokenizer)
             compilationEngine.compile()
-        xml_file.close()
+            xml_file.close()
 
 if __name__ == '__main__':
     Main(sys.argv[1:])
