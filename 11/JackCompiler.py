@@ -1,6 +1,6 @@
 import os, re, sys, glob
 
-# TODO handling objects, handling arrays
+# TODO debug command, segment
 
 END_LINE = "\n"
 
