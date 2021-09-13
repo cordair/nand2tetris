@@ -1,6 +1,5 @@
 // RAM[1] = 1+2+...+n
 // n in RAM[0]
-
 // assigning variables
 @R0
 D=M
