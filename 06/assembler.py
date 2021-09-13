@@ -120,7 +120,6 @@ class Parser:
                     words = words + word
                 if (len(words) == 0):
                     continue
-
                 if (words[0] == '('):
                     self.symbolTable.addEntry(words[1:-1], rom_index)
                     continue
