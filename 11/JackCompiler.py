@@ -23,9 +23,10 @@ ALL_CLASSES = []
 
 kind = ["static", "field", "arg", "var"]
 
-SEGMENT = ["const", "arg", "local", "static", "this", "that", "pointer", "temp"]
+SEGMENT = ["constant", "argument", "local", "static", "this", "that", "pointer", "temp"]
 COMMAND = ["add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not", 
-            "call Math.multiply 2", "call Math.divide 2"]
+            "Math.multiply", "Math.divide", "Math.sqrt",
+            "String.appendChar", "Memory.alloc"]
 
 class Tokenizer:
     def __init__(self, jack_filename):
@@ -227,12 +228,16 @@ class Tokenizer:
         return False
 
 class CompilationEngine:
-    def __init__(self, xml_file, tokenizer):
-        self.vm_writer = VMWriter(xml_file)
+    def __init__(self, vm_file, tokenizer):
+        self.file = vm_file
+        self.vm_writer = VMWriter(vm_file)
         self.tokenizer = tokenizer
         self.current_line = None
         self.current_token = None
         self.current_token_type = None
+        self.current_class = None
+        self.current_function = None
+        self.current_function_type = None
         self.tabs = ""
 
         self.class_st = SymbolTable()
@@ -258,7 +263,6 @@ class CompilationEngine:
         self.subroutine_dec.extend(self.type)
         self.subroutine_dec.extend(self.class_names)
 
-
     def compile(self):
         self.getNextLine()
         self.verifyOpeningToken()
@@ -268,67 +272,77 @@ class CompilationEngine:
 
     def compileClass(self):
         self.eat("class")
-        self.eat(self.class_names)
+        self.current_class = self.eat(self.class_names)
         self.eat("{")
-        self.class_st.startSubroutine()
         self.handleClassVarDec()
-        self.subroutine_st.startSubroutine()
         self.handleSubroutineDec()
         self.eat("}")
-
+ 
     def handleClassVarDec(self):
+        self.class_st.startSubroutine()
         while (self.current_token in self.class_var_dec):
             kind = self.eat(self.var_dec)
             type = self.eat(self.type)
             name = self.eatType("identifier")
-            self.class_st.define(name, type, kind)
+            self.class_st.define(kind, type, name)
             while(self.eat(",") != None):
                 name = self.eatType("identifier")
-                self.class_st.define(name, type, kind)
+                self.class_st.define(kind, type, name)
             self.eat(";")
             
     def handleSubroutineDec(self):
         while(self.current_token in self.subroutine):
-            self.eat(self.subroutine)
+            self.subroutine_st.startSubroutine()
+            self.current_function_type = self.eat(self.subroutine)
             self.eat(self.subroutine_dec)
-            self.eatType("identifier")
+            self.current_function = self.eatType("identifier")
             self.eat("(")
             self.handleParameterList()
             self.eat(")")
+            self.eat("{")
             self.handleSubroutineBody()
+            self.eat("}")
 
     def handleParameterList(self):
         if (self.current_token in self.type):
+            kind = "argument"
             type = self.eat(self.type)
             name = self.eatType("identifier")
-            kind = "argument"
-            self.subroutine_st.define(name, type, kind)
+            self.subroutine_st.define(kind, type, name)
             while (self.eat(",") != None):
                 type = self.eat(self.type)
                 name = self.eatType("identifier")
-                self.subroutine_st.define(name, type, kind)
-
-    def handleSubroutineBody(self):
-        self.eat("{")
-        self.handleVarDec()
-        self.compileStatements()
-        self.eat("}")
+                self.subroutine_st.define(kind, type, name)
 
     def handleVarDec(self):
         while(self.current_token == "var"):
             self.eatType("keyword")
+            kind = "local"
             type = self.eat(self.type)
             name = self.eatType("identifier")
-            kind = "local"
-            self.subroutine_st.define(name, type, kind)
+            self.subroutine_st.define(kind, type, name)
             while (self.eat(",") != None):
                 name = self.eatType("identifier")
-                self.subroutine_st.define(name, type, kind)
+                self.subroutine_st.define(kind, type, name)
+            self.eat(";")
+
+    def handleSubroutineBody(self):
+        self.handleVarDec()
+        self.vm_writer.resetLabel()
+        var_count = self.subroutine_st.getVarCount()
+        subroutine_name = self.current_class + "." + self.current_function
+        self.vm_writer.writeFunction(subroutine_name, var_count)
+        if (self.current_function_type == "constructor"):
+            field_count = self.class_st.getFieldCount()
+            self.vm_writer.writePush("constant", field_count)
+            self.vm_writer.writeCall("Memory.alloc", 1)
+            self.vm_writer.writePop("pointer", 0)
+        elif(self.current_function_type == "method"):
+            self.vm_writer.writePush("argument", 0)
+            self.vm_writer.writePop("pointer", 0)
+        self.compileStatements()
 
     def compileStatements(self):
-        prev_tabs = self.tabs
-        self.write("<statements>")
-        self.tabs += "  "
         while(self.current_token in self.statements):
             if (self.current_token == "let"):
                 self.handleLet()
@@ -340,99 +354,85 @@ class CompilationEngine:
                 self.handleWhile()
             elif (self.current_token == "return"):
                 self.handleReturn()
-        self.tabs = prev_tabs
-        self.write("</statements>")
 
     def handleIf(self):
-        label0 = self.vm_writer.getLabel()
-        label1 = self.vm_writer.getLabel()
+        if_true     = self.vm_writer.getLabel0("IF_TRUE")
+        if_false    = self.vm_writer.getLabel1("IF_FALSE")
 
         self.eat("if")
         self.eat("(")
         self.handleExpression()
         self.vm_writer.writeOperator("not")
-        self.vm_writer.writeIf(label0)
+        self.vm_writer.writeIfGoto(if_false)
         self.eat(")")
         self.eat("{")
         self.compileStatements()
-        self.vm_writer.writeGoto(label1)
+        self.vm_writer.writeGoto(if_true)
         self.eat("}")
-        self.vm_writer.writeLabel(label0)
+        self.vm_writer.writeLabel(if_false)
         
-        while (self.eat("else") != None):
+        while (self.eat("else")):
             self.eat("{")
             self.compileStatements()
-            self.vm_writer.writeLabel(label1)
             self.eat("}")
+        self.vm_writer.writeLabel(if_true)
 
     def handleWhile(self):
-        label0 = self.vm_writer.getLabel()
-        label1 = self.vm_writer.getLabel()
+        while_expression    = self.vm_writer.getLabel0("WHILE_EXP")
+        while_end           = self.vm_writer.getLabel1("WHILE_END")
 
         self.eat("while")
         self.eat("(")
-        self.vm_writer.writeLabel(label0)
+        self.vm_writer.writeLabel(while_expression)
         self.handleExpression()
         self.vm_writer.writeOperator("not")
-        self.vm_writer.writeIf(label1)
+        self.vm_writer.writeIfGoto(while_end)
         self.eat(")")
         self.eat("{")
         self.compileStatements()
-        self.vm_writer.writeGoto(label0)
+        self.vm_writer.writeGoto(while_expression)
+        self.vm_writer.writeLabel(while_end)
         self.eat("}")
-        self.writeLabel(label1)
-        
-    def handleLet(self):
-        self.write("<letStatement>")
-        prev_tabs = self.tabs
-        self.tabs += "  "
 
+    def handleLet(self):
         self.eat('let')
-        kind = self.findKind(self.current_token)
-        type = self.findIndex(self.current_token)
-        self.eatType("identifier")
+        name = self.eatType("identifier")
+        kind = self.stFindKind(name)
+        index = self.stFindIndex(name)
+        if (kind == "field"):
+            kind = "this"
         if (self.eat('[')):
+            self.vm_writer.writePush(kind, index)
             self.handleExpression()
+            self.vm_writer.writeOperator("add")
             self.eat(']')
-        self.eat('=')
-        self.handleExpression()
-        self.eat(';')
-        self.vm_writer.writePop(kind, type)
-        self.tabs = prev_tabs
-        self.write("</letStatement>")
+            self.eat('=')
+            self.handleExpression()
+            self.vm_writer.writePop("temp", 0)
+            self.vm_writer.writePop("pointer", 1)
+            self.vm_writer.writePush("temp", 0)
+            self.vm_writer.writePop("that", 0)
+            self.eat(';')
+        else:
+            self.eat('=')
+            self.handleExpression()
+            self.vm_writer.writePop(kind, index)
+            self.eat(';')
 
     def handleDo(self):
-        self.write("<doStatement>")
-        prev_tabs = self.tabs
-        self.tabs += "  "
-
         self.eat("do")
-        self.eatType("identifier")
-
-        if (self.current_token == "."):
-            self.eat(".")
-            self.eatType("identifier")
-        
-        self.eat("(")
-        self.compileExpressionList()
-        self.eat(")")
+        self.handleExpression()
+        self.vm_writer.writePop("temp", 0)
         self.eat(";")
 
-        self.tabs = prev_tabs
-        self.write("</doStatement>")
-
     def handleReturn(self):
-        self.write("<returnStatement>")
-        prev_tabs = self.tabs
-        self.tabs += "  "
-
         self.eat("return")
         if (self.current_token != ";"):
             self.handleExpression()
+        else:
+            self.vm_writer.writePush("constant", 0)
+        self.vm_writer.writeReturn()
         self.eat(";")
-
-        self.tabs = prev_tabs
-        self.write("</returnStatement>")
 
     def compileExpressionList(self):
         number_of_expression = 0
@@ -448,97 +448,161 @@ class CompilationEngine:
         self.handleTerm()
         operator = self.current_token
         while (self.eatOperator(self.op) != None):
-            operator = self.convertOperator(operator)
             self.handleTerm()
-            self.vm_writer.writeOperator(operator)
+            if (operator == "*"):
+                self.vm_writer.writeCall("Math.multiply", 2)
+            elif (operator == "/"):
+                self.vm_writer.writeCall("Math.divide", 2)
+            else:
+                operator = self.convertOperator(operator)
+                self.vm_writer.writeOperator(operator)
             operator = self.current_token
         
     def handleTerm(self):
-        if (self.current_token_type == "integerConstant"):
+        if (self.current_token in self.unaryOp):
+            operator = self.convertUnaryOperator(self.current_token) 
+            self.eat(self.unaryOp)
+            self.handleTerm()
+            self.vm_writer.writeOperator(operator)
+        elif (self.current_token == "("):
+            self.eat("(")
+            self.handleExpression()
+            self.eat(")")
+        elif (self.current_token_type == "integerConstant"):
             self.vm_writer.writePush("constant", self.current_token)
             self.eatType("integerConstant")
         elif (self.current_token_type == "stringConstant"):
-            self.eatType("stringConstant")
+            self.handleTermString()
+        elif (self.current_token in self.keyword_constant):
+            if (self.current_token == "this"):
+                self.vm_writer.writePush("pointer", 0)
+            elif (self.current_token == "true"):
+                self.vm_writer.writePush("constant", 1)
+                self.vm_writer.writeOperator("neg")
+            elif (self.current_token == "false"):
+                self.vm_writer.writePush("constant", 0)
+            elif (self.current_token == "null"):
+                self.vm_writer.writePush("constant", 0)
+            self.eatType("keyword")
         elif (self.current_token_type == "identifier"):
-            identifier_name = self.current_token
-            self.eatType("identifier")
+            name = self.eatType("identifier")
+
             if (self.current_token == "["):
+                kind = self.stFindKind(name)
+                index = self.stFindIndex(name)
+                if (kind == "field"):
+                    kind = "this"
+                self.vm_writer.writePush(kind, index)
                 self.eat("[")
                 self.handleExpression()
                 self.eat("]")
+                self.vm_writer.writeOperator("add")
+                self.vm_writer.writePop("pointer", 1)
+                self.vm_writer.writePush("that", 0)
+                
             elif (self.current_token == "("):
-                self.eat("(")
-                number_of_expression = self.compileExpressionList()
-                self.vm_writer.writeFunction(identifier_name, number_of_expression)
-                self.eat(")")
+                self.handleTermSameClassCall(name)
             elif (self.current_token == "."):
-                self.eat(".")
-                self.eatType("identifier")
-                self.eat("(")
-                number_of_expression = self.compileExpressionList()
-                self.vm_writer.writeCall(identifier_name, number_of_expression)
-                self.eat(")")
+                self.handleTermDiffClassCall(name)
             else:
-                segment = self.findKind(identifier_name)
-                index = self.findIndex(identifier_name)
-                self.vm_writer.writePush(segment, index)
-        else:
-            if (self.current_token in self.keyword_constant):
-                self.eatType("keyword")
-            elif (self.current_token in self.unaryOp):
-                operator = self.convertUnaryOperator(self.current_token) 
-                self.eat(self.unaryOp)
-                self.handleTerm()
-                self.vm_writer.writeOperator(operator)
-            elif (self.current_token == "("):
-                self.eat("(")
-                self.handleExpression()
-                self.eat(")")
+                kind = self.stFindKind(name)
+                index = self.stFindIndex(name)
+                if (kind == "field"):
+                    kind = "this"
+                self.vm_writer.writePush(kind, index)
+
+    def handleTermString(self):
+        string_name = self.current_token
+        self.vm_writer.writePush("constant", len(string_name))
+        self.vm_writer.writeCall("String.new", 1)
+        for i in range(len(string_name)):
+            self.vm_writer.writePush("constant", ord(string_name[i]))
+            self.vm_writer.writeCall("String.appendChar", 2)
+        self.eatType("stringConstant")
+
+    def handleTermSameClassCall(self, name):
+        self.eat("(")
+        self.vm_writer.writePush("pointer", 0)
+        name = (self.current_class + "." + name)
+        number_of_expression = self.compileExpressionList() + 1
+        self.vm_writer.writeCall(name, number_of_expression)
+        self.eat(")")
+
+    def handleTermDiffClassCall(self, name):
+        self.eat(".")
+        kind = self.stFindKind(name)
+        type = self.stFindType(name)
+        index = self.stFindIndex(name)
+        number_of_expression = 0
+        if (kind != None):
+            if (kind == "field"):
+                kind = "this"
+            self.vm_writer.writePush(kind, index)
+            number_of_expression = 1
+            name = type
+        name += "."
+        name += self.eatType("identifier")
+        self.eat("(")
+        number_of_expression += self.compileExpressionList()
+        self.vm_writer.writeCall(name, number_of_expression)
+        self.eat(")")
 
     def eat(self, token_to_eat):
-        line = None
         if (self.current_token in token_to_eat):
+            token = self.current_token
             self.getNextLine()
-        return line
+            return token
+        return None
     
     def eatType(self, type):
-        line = None
         if (self.current_token_type == type):
+            token = self.current_token
             self.getNextLine()
+            return token
         else:
             print("ERROR! Eat type error!", end='')
             print("\t line: " + self.current_line + "\t type_to_eat: " + type)
-        return line
+        return None
 
     def eatOperator(self, token_to_eat):
-        line = None
         if (self.current_token in token_to_eat):
+            token = self.current_token
             self.getNextLine()
-        return line
+            return token
+        return None
 
     def getNextLine(self):
         line = self.tokenizer.advance()
         self.current_line = line
 
         if (line != "<tokens>" and line != "</tokens>"):
-            token_type = line.split(" ")[0]
-            self.current_token = line.split(" ")[1:-1]
-            self.current_token_type = token_type[1:-1]
+            left_index = 0
+            right_index = len(line) - 1
+            while (left_index < len(line)):
+                if (line[left_index] == " "):
+                    break
+                left_index += 1
+            self.current_token_type = line[1:left_index-1]
+            while (line[right_index] != " "):
+                right_index -= 1
+            self.current_token = line[left_index+1:right_index]
 
-    def findKind(self, name):
-        segment = self.subroutine_st.kindOf(name)
-        if (segment == None):
-            segment = self.class_st.kindOf(name)
+    def write(self, line):
+        self.file.write(self.tabs)
+        self.file.write(line + END_LINE)
 
-    def findType(self, name):
-        segment = self.subroutine_st.typeOf(name)
-        if (segment == None):
-            segment = self.class_st.typeOf(name)
+    def close(self):
+        self.file.close()
 
-    def findIndex(self, name):
-        segment = self.subroutine_st.indexOf(name)
-        if (segment == None):
-            segment = self.class_st.indexOf(name)
+    def verifyOpeningToken(self):
+        if (self.current_line != "<tokens>"):
+            print(self.current_line)
+            print("ERROR! MISSING OPENING TOKEN")
+
+    def verifyEndingToken(self):
+        if (self.current_line != "</tokens>"):
+            print(self.current_line)
+            print("ERROR! MISSING ENDING TOKEN")
 
     def convertOperator(self, operator):
         if (operator == "&lt;"):
@@ -555,10 +619,6 @@ class CompilationEngine:
             return "add"
         elif (operator == "-"):
             return "sub"
-        elif (operator == "*"):
-            return "call Math.multiply 2"
-        elif (operator == "/"):
-            return "call Math.divide 2"
 
     def convertUnaryOperator(self, operator):
         if (operator == "-"):
@@ -566,108 +626,108 @@ class CompilationEngine:
         elif (operator == "~"):
             return "not"
 
-    def write(self, line):
-        self.file.write(line)
-        self.file.write(END_LINE)
+    def stFindKind(self, name):
+        segment = self.subroutine_st.kindOf(name)
+        if (segment == None):
+            segment = self.class_st.kindOf(name)
+        return segment
 
-    def close(self):
-        self.file.close()
+    def stFindType(self, name):
+        type = self.subroutine_st.typeOf(name)
+        if (type == None):
+            type = self.class_st.typeOf(name)
+        return type
 
-    def verifyOpeningToken(self):
-        if (self.current_line != "<tokens>"):
-            print(self.current_line)
-            print("ERROR! MISSING OPENING TOKEN")
-
-    def verifyEndingToken(self):
-        if (self.current_line != "</tokens>"):
-            print(self.current_line)
-            print("ERROR! MISSING ENDING TOKEN")
+    def stFindIndex(self, name):
+        kind = self.subroutine_st.indexOf(name)
+        if (kind == None):
+            kind = self.class_st.indexOf(name)
+        return kind
 
 class VMWriter:
     def __init__(self, file):
         self.file = file
-        self.label_number = 0
+        self.label0_number = -1
+        self.label1_number = -1
 
-    def write(self, line):
-        self.file.write("  " + line)
-        self.file.write(END_LINE)
+    def getLabel0(self, label_name):
+        self.label0_number += 1
+        number = self.label0_number
+        return "{name}{number}".format(name=label_name, number=number)
+    
+    def getLabel1(self, label_name):
+        self.label1_number += 1
+        number = self.label1_number
+        return "{name}{number}".format(name=label_name, number=number)
+
+    def resetLabel(self):
+        self.label0_number = -1
+        self.label1_number = -1
 
     def writeOperator(self, operator):
-        if (operator in COMMAND):
-            self.write(operator)
-        else:
-            print("WRITE OPERATOR ERROR!")
+        self.write(operator)
 
     def writePush(self, segment, index):
-        if (segment in SEGMENT):
-            self.write("push {segment} {index}".format(segment=segment, index=index))
-        else:
-            print("WRITE PUSH ERROR!")
-
-    def writePushString(self, string_segments):
-        print("WRITE PUSH STRING ERROR!")
+        self.write("push {segment} {index}".format(segment=segment, index=index))
 
     def writePop(self, segment, index):
-        if (segment in SEGMENT):
-            return "pop {segment} {index}".format(segment=segment, index=index)
-        print("WRITE POP ERROR!")
+        self.write("pop {segment} {index}".format(segment=segment, index=index))
 
     def writeArithmetic(self, command):
-        if (command in COMMAND):
-            self.write(command)
-        print("WRITE ARITHMETIC ERROR!")
- 
-    def writeLabel(self, label):
-        self.file.write(label)
-        self.file.write(END_LINE)
-
-    def getLabel(self):
-        number = self.label_number
-        self.label_number += 1
-        return "L" + number
-
-    def writeGoto(self, label):
-        self.write("goto " + label)
-
-    def writeIf(self, label):
-        self.write("if-goto " + label)
+        self.write(command)
 
     def writeCall(self, name, number_of_argument):
         self.write("call {name} {number}".format(name=name, number=number_of_argument))
 
     def writeFunction(self, name, number_of_local):
-        self.write("call {name} {number}".format(name=name, number=number_of_local))
+        self.write("function {name} {number}".format(name=name, number=number_of_local))
 
     def writeReturn(self):
-        return
+        self.write("return")
 
-    def close(self):
-        return
+    def writeGoto(self, label):
+        self.write("goto " + label)
+
+    def writeIfGoto(self, label):
+        self.write("if-goto " + label)
+
+    def write(self, line):
+        self.file.write(line)
+        self.file.write(END_LINE)
+ 
+    def writeLabel(self, label):
+        self.file.write("label {L}".format(L=label))
+        self.file.write(END_LINE)
 
 class SymbolTable:
     def __init__(self):
         self.st = None
         self.kind_count = None
+        self.field_count = None
+        self.var_count = None
 
     def startSubroutine(self):
         self.st = {}
         self.kind_count = {}
+        self.field_count = 0
+        self.var_count = 0
 
-    def define(self, name, type, kind):
-        index = self.varCount(kind) + 1
+    def define(self, kind, type, name):
+        index = self.kind_count.get(kind, -1) + 1
+        if (kind == "field"):
+            self.field_count += 1
+        else:
+            self.var_count += 1
         self.kind_count[kind] = index
-        self.st[name] = [type, kind, index]
-    
-    def varCount(self, kind):
-        return self.kind_count.get(kind, -1)
+        self.st[name] = [kind, type, index]
 
-    def typeOf(self, name):
+    def kindOf(self, name):
         values = self.st.get(name)
         if (values != None):
             return values[0]
         return None
 
-    def kindOf(self, name):
+    def typeOf(self, name):
         values = self.st.get(name)
         if (values != None):
             return values[1]
@@ -678,6 +738,16 @@ class SymbolTable:
         if (values != None):
             return values[2]
         return None
+    
+    def getFieldCount(self):
+        return self.field_count
+
+    def getVarCount(self):
+        return self.var_count
+
+    def print(self):
+        for key, value in self.st.items():
+            print("key: ", key, "   value:", value)
 
 class Main:
     def __init__(self, argv):
@@ -695,32 +765,31 @@ class Main:
     def translateDirectory(self, directory):
         for jack_filename in glob.glob(directory + "/*.jack"):
             file_name = jack_filename.split('.')[0]
-            class_name = file_name.split("\\")[1]
+            class_name = file_name.split("\\")[-1]
             ALL_CLASSES.append(class_name)
         
         for jack_filename in glob.glob(directory + "/*.jack"):
-            xml_filename = jack_filename.split('.')[0] + ".xml"
-            with open(xml_filename, "w") as xml_file:
+            vm_filename = jack_filename.split('.')[0] + ".vm"
+            with open(vm_filename, "w") as vm_file:
                 tokenizer = Tokenizer(jack_filename)
                 tokenizer.parse()
 
-                compilationEngine = CompilationEngine(xml_file, tokenizer)
+                compilationEngine = CompilationEngine(vm_file, tokenizer)
                 compilationEngine.compile()
-                xml_file.close()
+                vm_file.close()
 
     def translateFile(self, file_name):
         prefix_filename = file_name.split('.')[0]
         jack_filename = prefix_filename + ".jack"
-        xml_filename =  prefix_filename + ".xml"
-        class_name = prefix_filename.split("\\")[1]
-        ALL_CLASSES.append(class_name)
+        vm_filename =  prefix_filename + ".vm"
+        ALL_CLASSES.append(prefix_filename)
 
-        with open(xml_filename, "w") as xml_file:
+        with open(vm_filename, "w") as vm_file:
             tokenizer = Tokenizer(jack_filename)
             tokenizer.parse()
-            compilationEngine = CompilationEngine(xml_file, tokenizer)
+            compilationEngine = CompilationEngine(vm_file, tokenizer)
             compilationEngine.compile()
-            xml_file.close()
+            vm_file.close()
 
 if __name__ == '__main__':
     Main(sys.argv[1:])
