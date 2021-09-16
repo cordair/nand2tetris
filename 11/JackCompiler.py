@@ -1,7 +1,5 @@
 import os, re, sys, glob
 
-# TODO debug command, segment
-
 END_LINE = "\n"
 
 keyword = ["class", "constructor", "function", "method", "field", "static", "var",          
@@ -20,13 +18,6 @@ IDENTIFIER_TOKEN        = 5
 NESTED_WORD             = 6
 
 ALL_CLASSES = []
-
-kind = ["static", "field", "arg", "var"]
-
-SEGMENT = ["constant", "argument", "local", "static", "this", "that", "pointer", "temp"]
-COMMAND = ["add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not", 
-            "Math.multiply", "Math.divide", "Math.sqrt",
-            "String.appendChar", "Memory.alloc"]
 
 class Tokenizer:
     def __init__(self, jack_filename):
@@ -305,6 +296,8 @@ class CompilationEngine:
 
     def handleParameterList(self):
         if (self.current_token in self.type):
+            if (self.current_function_type == "method"):
+                self.subroutine_st.define("argument", "null", "null")
             kind = "argument"
             type = self.eat(self.type)
             name = self.eatType("identifier")
@@ -401,7 +394,8 @@ class CompilationEngine:
         index = self.stFindIndex(name)
         if (kind == "field"):
             kind = "this"
-        if (self.eat('[')):
+        if (self.current_token == "["):
+            self.eat('[')
             self.vm_writer.writePush(kind, index)
             self.handleExpression()
             self.vm_writer.writeOperator("add")
@@ -668,9 +662,13 @@ class VMWriter:
         self.write(operator)
 
     def writePush(self, segment, index):
+        if (segment == None):
+            print("PUSH ERROR! segment is None")
         self.write("push {segment} {index}".format(segment=segment, index=index))
 
     def writePop(self, segment, index):
+        if (segment == None):
+            print("POP ERROR! segment is None")
         self.write("pop {segment} {index}".format(segment=segment, index=index))
 
     def writeArithmetic(self, command):
@@ -716,7 +714,7 @@ class SymbolTable:
         index = self.kind_count.get(kind, -1) + 1
         if (kind == "field"):
             self.field_count += 1
-        else:
+        elif (kind == "local"):
             self.var_count += 1
         self.kind_count[kind] = index
         self.st[name] = [kind, type, index]
