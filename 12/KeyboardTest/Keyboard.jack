@@ -32,7 +32,9 @@ class Keyboard {
      * F1 - F12 = 141 - 152
      */
     function char keyPressed() {
-        return Memory.peek(24576);  // ram[24576] = ram[keyboard] ;
+        var char c;
+        let c = Memory.peek(24576);  // ram[24576] = ram[keyboard] 
+        return c;
     }
 
     /**								

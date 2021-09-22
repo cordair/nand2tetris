@@ -15,7 +15,9 @@ class Array {
 
     /** Constructs a new Array of the given size. */
     function Array new(int size) {
-        return Memory.alloc(size);
+        var Array arr;
+        let arr = Memory.alloc(size);
+        return arr;
     }
 
     /** Disposes this array. */

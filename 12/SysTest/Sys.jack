@@ -16,7 +16,6 @@ class Sys {
         do Output.init();
         do Keyboard.init();
         do Main.main();
-        do Sys.halt();
         return;
     }
 
@@ -31,7 +30,6 @@ class Sys {
         var int milisecond, milisecondsDuration;
         while (milisecond < duration) {
             let milisecond = milisecond + 1;
-            let milisecondsDuration = 0;
             while (milisecondsDuration < 100) {
                 let milisecondsDuration = milisecondsDuration + 1;
             }

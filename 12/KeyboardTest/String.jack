@@ -18,11 +18,8 @@ class String {
     /** constructs a new empty string with a maximum length of maxLength
      *  and initial length of 0. */
     constructor String new(int maxLength) {
-        if (maxLength = 0) {
-            let maxLength = 1;
-        }
-        let string = Array.new(maxLength);
-        let length = 0;
+        let string = Memory.alloc(maxLength);
+        let length = maxLength;
         let int2Char = 48;
         return this;
     }
@@ -52,15 +49,27 @@ class String {
 
     /** Appends c to this string's end and returns this string. */
     method String appendChar(char c) {
-        let string[length] = c;
-        let length = length + 1;
-        return this;
+        var String newString;
+        var char currentStringChar;
+        var int i;
+        let newString = String.new(length + 1);
+        while (i < length) {
+            let currentStringChar = charAt(i);
+            do newString.setCharAt(i, currentStringChar);
+            let i = i + 1;
+        }
+        do newString.setCharAt(i, c);
+        do dispose();
+        return newString;
+        // let string[length] = c;
+        // let length = length + 1;
+        // return this;
     }
 
     /** Erases the last character from this string. */
     method void eraseLastChar() {
-        do setCharAt(length, 36);       // dollar character 
         let length = length - 1;
+        do setCharAt(length, 36);       // dollar character 
         return;
     }
 
@@ -68,40 +77,29 @@ class String {
      *  until a non-digit character is detected. */
     method int intValue() {
         var int val, i, d;
-        while (i < length) {
-            if (~(string[i] < 48) & ~(string[i] > 57)) {
-                let d = string[i] - int2Char;
-                let val = val * 10 + d;
-            }
+        while (~(string[i] < 48) & ~(string[i] > 47)) {
+            let d = string[i] - int2Char;
+            let val = val * 10 + d;
             let i = i + 1;
-        }
-        if (string[0] = 45) {
-            let val = - val;
         }
         return val;
     }
 
     /** Sets this string to hold a representation of the given value. */
     method void setInt(int val) {
-        let length = 0;
+        var int lastDigit, i;
+        var char c;
         if (val < 0) {
-            do setCharAt(0, 45); // minus character
-        }
-        else {
+            do setCharAt(i, 45);  // minus character
             let val = -val;
+            let i = i + 1;
         }
-        do setIntNegative(val);
-        return;
-    }
-
-    // -32768 -> 0
-    // if init (var int lastDigit;) inside function call,-> will not work because of the override
-    method void setIntNegative(int val) {
-        if (val < -10) {
-            do setIntNegative(val / 10);
-            let val = val - ((val / 10) * 10);
+        while (~(val < 10)) {
+            let lastDigit = val - ((val / 10) * 10);
+            let c = lastDigit + int2Char;
+            do setCharAt(i, c);
+            let i = i + 1;
         }
-        do appendChar(-val + int2Char);
         return;
     }
 
